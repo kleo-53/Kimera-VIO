@@ -10,6 +10,7 @@
  * @file   VisionImuFrontend-definitions.h
  * @brief  Definitions for VisionImuFrontend
  * @author Marcus Abate
+ * @author Igor Lovets
  */
 
 #pragma once
@@ -21,7 +22,18 @@
 
 namespace VIO {
 
+enum class FrontendType {
+  //! Frontend that works with Mono camera and Imu
+  kMonoImu = 0,
+  //! Frontend that works with Stereo camera and Imu
+  kStereoImu = 1,
+  //! Frontend that works with RGB + Depth camera and Imu
+  kRgbdImu = 2,
+  //! Frontend that works with Gnss, Stereo camera and Imu
+  kGnssStereoImu = 3,
 // TODO(marcus): this could probably move somewhere else once refactor happens
+};
+
 struct ExternalOdomMeasurement {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
