@@ -122,7 +122,6 @@ int main(int argc, char* argv[]) {
   auto tic = VIO::utils::Timer::tic();
   bool is_pipeline_successful = false;
   if (vio_params.parallel_run_) {
-    std::cout << "Run parallel\n";
     auto handle = std::async(
         std::launch::async, &VIO::DataProviderInterface::spin, dataset_parser);
     auto handle_pipeline =
@@ -139,7 +138,6 @@ int main(int argc, char* argv[]) {
     handle_shutdown.get();
     handle_pipeline.get();
   } else {
-    std::cout << "Run sequential\n";
     while (dataset_parser->spin() && vio_pipeline->spin()) {
       continue;
     };

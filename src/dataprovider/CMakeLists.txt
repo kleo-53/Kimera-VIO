@@ -9,7 +9,4 @@ target_sources(kimera_vio
     "${CMAKE_CURRENT_LIST_DIR}/StereoDataProviderModule.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/EurocDataProvider.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/KittiDataProvider.cpp"
-### GNSS
-    "${CMAKE_CURRENT_LIST_DIR}/GNSSVIODataProvider.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/GnssStereoDataProviderModule.cpp"
 )

@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include "kimera-vio/frontend/GnssStereoVisionImuFrontend.h"
 #include "kimera-vio/frontend/MonoVisionImuFrontend.h"
 #include "kimera-vio/frontend/StereoVisionImuFrontend.h"
 #include "kimera-vio/frontend/VisionImuFrontend.h"
@@ -41,12 +40,13 @@ class VisionImuFrontendFactory {
       std::optional<OdometryParams> odom_params) {
     switch (frontend_type) {
       case FrontendType::kMonoImu: {
-        return VIO::make_unique<MonoVisionImuFrontend>(imu_params,
+        return std::make_unique<MonoVisionImuFrontend>(frontend_params,
+                                                       imu_params,
                                                        imu_initial_bias,
-                                                       frontend_params,
                                                        camera,
                                                        display_queue,
-                                                       log_output);
+                                                       log_output,
+                                                       odom_params);
       }
       case FrontendType::kStereoImu: {
         LOG(FATAL) << "Tried to create a StereoVisionFrontEnd"
@@ -79,52 +79,14 @@ class VisionImuFrontendFactory {
                    << "with a StereoCamera!";
       }
       case FrontendType::kStereoImu: {
-        return VIO::make_unique<StereoVisionImuFrontend>(imu_params,
+        return std::make_unique<StereoVisionImuFrontend>(frontend_params,
+                                                         imu_params,
                                                          imu_initial_bias,
-                                                         frontend_params,
                                                          stereo_camera,
                                                          display_queue,
-                                                         log_output);
+                                                         log_output,
+                                                         odom_params);
       }
-      default: {
-        LOG(FATAL) << "Requested frontend type is not supported.\n"
-                   << "Currently supported frontend types:\n"
-                   << "0: Mono + IMU \n"
-                   << "1: Stereo + IMU \n"
-                   << " but requested frontend: "
-                   << static_cast<int>(frontend_type);
-      }
-    }
-  }
-
-  // Stereo version: feed a VIO::StereoCamera
-  static VisionImuFrontend::UniquePtr createFrontend(
-      const FrontendType& frontend_type,
-      const ImuParams& imu_params,
-      const ImuBias& imu_initial_bias,
-      const FrontendParams& frontend_params,
-      const StereoCamera::ConstPtr& stereo_camera,
-      const GnssParams& gnss_params,
-      DisplayQueue* display_queue,
-      bool log_output) {
-    switch (frontend_type) {
-      case FrontendType::kMonoImu: {
-        LOG(FATAL) << "Tried to create a MonoVisionFrontEnd"
-                   << "with a GnssStereoCamera!";
-      }
-      case FrontendType::kStereoImu: {
-        LOG(FATAL) << "Tried to create a StereoVisionFrontEnd"
-                   << "with a GnssStereoCamera!";
-      }
-      case FrontendType::kGnssStereoImu:
-        return VIO::make_unique<GnssStereoVisionImuFrontend>(imu_params,
-                                                             imu_initial_bias,
-                                                             frontend_params,
-                                                             stereo_camera,
-                                                             gnss_params,
-                                                             display_queue,
-                                                             log_output);
-        ;
       default: {
         LOG(FATAL) << "Requested frontend type is not supported.\n"
                    << "Currently supported frontend types:\n"
