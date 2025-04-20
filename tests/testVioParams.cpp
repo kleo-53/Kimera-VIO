@@ -118,7 +118,7 @@ TEST_F(VioParamsFixture, explicitConstructorCorrect) {
                        FLAGS_test_data_path + "/EurocParams/" + VioParams::kLcdFilename,
                        FLAGS_test_data_path + "/EurocParams/" + VioParams::kDisplayFilename,
                        "",
-                       true);
+                       "");
 
   // Parse yourself
   parseParamsManually();

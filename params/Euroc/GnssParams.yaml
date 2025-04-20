@@ -1,0 +1,13 @@
+%YAML:1.0
+
+T_BS:
+  cols: 4
+  rows: 4
+  data: [1.0, 0.0, 0.0, 0.0,
+         0.0, 1.0, 0.0, 0.0,
+         0.0, 0.0, 1.0, 0.0,
+         0.0, 0.0, 0.0, 1.0]
+
+# inertial sensor noise model parameters (static)
+noise: 1.6968e-04 # [ rad / s / sqrt(Hz) ]   ( gyro "white noise" )
+timestamp: "1403636580838550000"

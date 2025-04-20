@@ -27,6 +27,7 @@ MonoDataProviderModule::MonoDataProviderModule(OutputQueue* output_queue,
                          name_id,
                          parallel_run),
       left_frame_queue_("data_provider_left_frame_queue"),
+      gnss_queue_("gnss_queue"),
       cached_left_frame_(nullptr) {}
 
 MonoDataProviderModule::InputUniquePtr
@@ -46,6 +47,7 @@ MonoDataProviderModule::getInputPacket() {
 MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
     bool cache_timestamp) {
   // Retrieve left frame data.
+  // LOG(INFO) << "IN MONO SYNC PACKET";
   Frame::UniquePtr left_frame_payload;
   if (cached_left_frame_) {
     repeated_frame_ = true;
@@ -56,6 +58,7 @@ MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
   }
 
   if (!left_frame_payload) {
+    // LOG(INFO) << "NO";
     return nullptr;
   }
 
@@ -82,6 +85,7 @@ MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
       return nullptr;
   }
 
+  // LOG(INFO) << "OK AFTER IMU";
   bool odometry_valid = false;
   gtsam::NavState external_odometry;
   if (external_odometry_buffer_) {
@@ -114,8 +118,9 @@ MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
                                                imu_meas.acc_gyr_,
                                                external_odometry);
   }
+  // LOG(INFO) << "OK";
 
-  //! Send synchronized left frame and IMU data.
+  //! Send synchronized left frame and IMU data. // вот тут возвращает null видимо
   return std::make_unique<MonoImuSyncPacket>(
       std::move(left_frame_payload), imu_meas.timestamps_, imu_meas.acc_gyr_);
 }

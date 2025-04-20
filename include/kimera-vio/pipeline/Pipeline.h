@@ -90,6 +90,11 @@ class Pipeline {
     data_provider_module_->fillExternalOdometryQueue(odom_measurement);
   }
 
+  inline void fillGnssQueue(const GnssMeasurement& gnss_measurement) {
+    CHECK(data_provider_module_);
+    data_provider_module_->fillGnssQueue(gnss_measurement);
+  }
+
   inline LcdModule* getLcdModule() const { return lcd_module_.get(); }
 
  public:

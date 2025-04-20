@@ -17,6 +17,7 @@
 #include "kimera-vio/frontend/GnssStereoVisionImuFrontend.h"
 #include "kimera-vio/frontend/MonoVisionImuFrontend.h"
 #include "kimera-vio/frontend/StereoVisionImuFrontend.h"
+#include "kimera-vio/frontend/GnssVisionImuFrontendModule.h"
 #include "kimera-vio/frontend/VisionImuFrontend.h"
 #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 
@@ -41,7 +42,7 @@ class VisionImuFrontendFactory {
       std::optional<OdometryParams> odom_params) {
     switch (frontend_type) {
       case FrontendType::kMonoImu: {
-        return VIO::make_unique<MonoVisionImuFrontend>(imu_params,
+        return std::make_unique<MonoVisionImuFrontend>(imu_params,
                                                        imu_initial_bias,
                                                        frontend_params,
                                                        camera,
@@ -79,18 +80,28 @@ class VisionImuFrontendFactory {
                    << "with a StereoCamera!";
       }
       case FrontendType::kStereoImu: {
-        return VIO::make_unique<StereoVisionImuFrontend>(imu_params,
+        return std::make_unique<StereoVisionImuFrontend>(imu_params,
                                                          imu_initial_bias,
                                                          frontend_params,
                                                          stereo_camera,
                                                          display_queue,
                                                          log_output);
       }
+      // case FrontendType::kGnssStereoImu: {
+      //   return std::make_unique<GnssStereoVisionImuFrontend>(imu_params,
+      //                                                    imu_initial_bias,
+      //                                                    frontend_params,
+      //                                                    stereo_camera,
+      //                                                    gnss_params,
+      //                                                    display_queue,
+      //                                                    log_output);
+      // }
       default: {
         LOG(FATAL) << "Requested frontend type is not supported.\n"
                    << "Currently supported frontend types:\n"
                    << "0: Mono + IMU \n"
                    << "1: Stereo + IMU \n"
+                  //  << "3: Gnss + Stereo + IMU \n"
                    << " but requested frontend: "
                    << static_cast<int>(frontend_type);
       }
@@ -106,7 +117,8 @@ class VisionImuFrontendFactory {
       const StereoCamera::ConstPtr& stereo_camera,
       const GnssParams& gnss_params,
       DisplayQueue* display_queue,
-      bool log_output) {
+      bool log_output,
+      std::optional<OdometryParams> odom_params) {
     switch (frontend_type) {
       case FrontendType::kMonoImu: {
         LOG(FATAL) << "Tried to create a MonoVisionFrontEnd"
@@ -116,20 +128,21 @@ class VisionImuFrontendFactory {
         LOG(FATAL) << "Tried to create a StereoVisionFrontEnd"
                    << "with a GnssStereoCamera!";
       }
-      case FrontendType::kGnssStereoImu:
-        return VIO::make_unique<GnssStereoVisionImuFrontend>(imu_params,
+      case FrontendType::kGnssStereoImu: {
+        return std::make_unique<GnssStereoVisionImuFrontend>(imu_params,
                                                              imu_initial_bias,
                                                              frontend_params,
                                                              stereo_camera,
                                                              gnss_params,
                                                              display_queue,
                                                              log_output);
-        ;
+      }
       default: {
         LOG(FATAL) << "Requested frontend type is not supported.\n"
                    << "Currently supported frontend types:\n"
                    << "0: Mono + IMU \n"
                    << "1: Stereo + IMU \n"
+                   << "3: GNSS + Stereo + IMU \n"
                    << " but requested frontend: "
                    << static_cast<int>(frontend_type);
       }

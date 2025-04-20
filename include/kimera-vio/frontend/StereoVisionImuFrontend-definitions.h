@@ -24,6 +24,7 @@ namespace VIO {
 
 struct StereoFrontendOutput : public FrontendOutputPacketBase {
  public:
+//  using PimPtr = std::shared_ptr<gtsam::PreintegratedImuMeasurements>;
   KIMERA_POINTER_TYPEDEFS(StereoFrontendOutput);
   KIMERA_DELETE_COPY_CONSTRUCTORS(StereoFrontendOutput);
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

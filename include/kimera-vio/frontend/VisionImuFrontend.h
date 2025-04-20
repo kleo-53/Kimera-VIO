@@ -48,14 +48,16 @@ class VisionImuFrontend {
   KIMERA_DELETE_COPY_CONSTRUCTORS(VisionImuFrontend);
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef std::function<void(double imu_time_shift_s)> ImuTimeShiftCallback;
+  typedef std::function<void(double gnss_time_shift_s)> GnssTimeShiftCallback;
 
  public:
-  VisionImuFrontend(const FrontendParams& frontend_params,
-                    const ImuParams& imu_params,
+  VisionImuFrontend(const ImuParams& imu_params,
                     const ImuBias& imu_initial_bias,
+                    const FrontendParams& frontend_params,
                     DisplayQueue* display_queue,
                     bool log_output,
-                    std::optional<OdometryParams> odom_params = std::nullopt);
+                    std::optional<OdometryParams> odom_params = std::nullopt,
+                    std::optional<GnssParams> gnss_params = std::nullopt);
 
   virtual ~VisionImuFrontend();
 
@@ -124,6 +126,11 @@ class VisionImuFrontend {
   inline void registerImuTimeShiftUpdateCallback(
       const ImuTimeShiftCallback& callback) {
     imu_time_shift_update_callback_ = callback;
+  }
+
+  inline void registerGnssTimeShiftUpdateCallback(
+      const GnssTimeShiftCallback& callback) {
+    gnss_time_shift_update_callback_ = callback;
   }
 
  protected:
@@ -212,10 +219,12 @@ class VisionImuFrontend {
 
   // Time alignment
   ImuTimeShiftCallback imu_time_shift_update_callback_;
+  GnssTimeShiftCallback gnss_time_shift_update_callback_;
   TimeAlignerBase::UniquePtr time_aligner_;
 
   // External odometry
   std::optional<OdometryParams> odom_params_;
+  std::optional<GnssParams> gnss_params_;
   // world_Pose_body for the last keyframe
   std::optional<gtsam::Pose3> world_OdomPose_body_lkf_;
 };

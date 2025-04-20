@@ -51,7 +51,8 @@ class StereoVisionImuFrontend : public VisionImuFrontend {
                           const FrontendParams& tracker_params,
                           const StereoCamera::ConstPtr& stereo_camera,
                           DisplayQueue* display_queue = nullptr,
-                          bool log_output = false);
+                          bool log_output = false,
+                          std::optional<OdometryParams> odom_params = std::nullopt);
   virtual ~StereoVisionImuFrontend();
 
  public:

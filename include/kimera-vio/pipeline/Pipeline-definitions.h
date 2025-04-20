@@ -26,6 +26,7 @@
 #include "kimera-vio/imu-frontend/ImuFrontendParams.h"
 #include "kimera-vio/loopclosure/LoopClosureDetectorParams.h"
 #include "kimera-vio/visualizer/DisplayParams.h"
+#include "kimera-vio/frontend/OdometryParams.h"
 
 DECLARE_bool(use_external_odometry);
 
@@ -110,7 +111,7 @@ struct VioParams : public PipelineParams {
    * - BackendParams
    * - LcdParams
    * - DisplayParams
-   * - ExternalOdometryParams
+   * - GnssParams
    *
    * @return true if all parsing went ok.
    */
@@ -130,6 +131,7 @@ struct VioParams : public PipelineParams {
   static constexpr char kBackendFilename[] = "BackendParams.yaml";
   static constexpr char kLcdFilename[] = "LcdParams.yaml";
   static constexpr char kDisplayFilename[] = "DisplayParams.yaml";
+  static constexpr char kGnssFilename[] = "GnssParams.yaml";
   static constexpr char kOdometryFilename[] = "ExternalOdometryParams.yaml";
 
   // The actual VIO parameters:
@@ -142,6 +144,7 @@ struct VioParams : public PipelineParams {
   //!  so that any changes to this pointer will affect both.
   BackendParams::Ptr backend_params_;
   LoopClosureDetectorParams lcd_params_;
+  GnssParams gnss_params_;
   DisplayParams::Ptr display_params_;
   //! General Pipeline parameters
   FrontendType frontend_type_;
@@ -150,7 +153,6 @@ struct VioParams : public PipelineParams {
   std::optional<OdometryParams> odom_params_;
   bool parallel_run_;
 
-  GnssParams gnss_params_;
 
  protected:
   //! Helper function to parse camera params.

@@ -28,6 +28,7 @@ VisionImuFrontendModule::VisionImuFrontendModule(
 FrontendOutputPacketBase::UniquePtr VisionImuFrontendModule::spinOnce(
     FrontendInputPacketBase::UniquePtr input) {
   CHECK(input);
+  LOG(INFO) << "VisionImuFrontendModule SPIN ONCE";
   return vio_frontend_->spinOnce(std::move(input));
 }
 

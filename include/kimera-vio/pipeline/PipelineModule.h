@@ -190,21 +190,26 @@ class PipelineModule : public PipelineModuleBase {
   bool spin() override {
     VLOG_IF(1, parallel_run_) << "Module: " << name_id_ << " - Spinning.";
     utils::StatsCollector timing_stats(name_id_ + " [ms]");
+    LOG(INFO) << "Module: " << name_id_ << " - Spinning.";
     while (!shutdown_) {
       // Get input data from queue by waiting for payload.
       is_thread_working_ = false;
       InputUniquePtr input = getInputPacket();
       is_thread_working_ = true;
+    // LOG(INFO) << "WE ARE IN SPIN 2";
       if (input) {
+        // LOG(INFO) << "WE ARE IN SPIN 3";
         auto tic = utils::Timer::tic();
         // Transfer the ownership of input to the actual pipeline module.
         // From this point on, you cannot use input, since spinOnce owns it.
         OutputUniquePtr output = spinOnce(std::move(input));
         if (output) {
+          // LOG(INFO) << "WE ARE IN SPIN 4";
           // Received a valid output, send to output queue
           if (!pushOutputPacket(std::move(output))) {
             LOG(WARNING) << "Module: " << name_id_ << " - Output push failed.";
           } else {
+            // LOG(INFO) << "WE ARE IN SPIN 5; " << "Module: " << name_id_ << " - Pushed output.";;
             VLOG(2) << "Module: " << name_id_ << " - Pushed output.";
           }
         } else {
@@ -215,6 +220,7 @@ class PipelineModule : public PipelineModuleBase {
         auto spin_duration = utils::Timer::toc(tic).count();
         timing_stats.AddSample(spin_duration);
       } else {
+        LOG(INFO) << "Module: " << name_id_ << " - No Input received.";
         // TODO(nathan) switch to VLOG_IS_ON(1) when we fix how spinning works
         LOG_IF_EVERY_N(WARNING, VLOG_IS_ON(10), 50)
             << "Module: " << name_id_ << " - No Input received.";
@@ -389,11 +395,13 @@ class SIMOPipelineModule : public MIMOPipelineModule<Input, Output> {
     bool queue_state = false;
     if (PIO::parallel_run_) {
       queue_state = input_queue_->popBlocking(input);
+      // LOG(INFO) << "INPUT PACKET 1";
     } else {
       queue_state = input_queue_->pop(input);
     }
 
     if (queue_state) {
+      // LOG(INFO) << "SEND INPUT" << queue_state;
       return input;
     } else {
       LOG(WARNING) << "Module: " << PIO::name_id_ << " - "

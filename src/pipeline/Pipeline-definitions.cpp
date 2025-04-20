@@ -34,6 +34,7 @@ DEFINE_bool(use_external_odometry, false, "Use an external odometry input.");
 #include "kimera-vio/loopclosure/LoopClosureDetectorParams.h"
 #include "kimera-vio/visualizer/DisplayParams.h"
 #include "kimera-vio/visualizer/OpenCvDisplay.h"  // for ocv display params...
+#include "kimera-vio/frontend/GnssParams.h"
 
 namespace VIO {
 
@@ -47,19 +48,20 @@ decltype(VioParams::kFrontendFilename) constexpr VioParams::kFrontendFilename;
 decltype(VioParams::kBackendFilename) constexpr VioParams::kBackendFilename;
 decltype(VioParams::kLcdFilename) constexpr VioParams::kLcdFilename;
 decltype(VioParams::kDisplayFilename) constexpr VioParams::kDisplayFilename;
-decltype(VioParams::kOdometryFilename) constexpr VioParams::kOdometryFilename;
+decltype(VioParams::kGnssFilename) constexpr VioParams::kGnssFilename;
+// decltype(VioParams::kOdometryFilename) constexpr VioParams::kOdometryFilename;
 
 VioParams::VioParams(const std::string& params_folder_path)
     : VioParams(params_folder_path,
-                "PipelineParams.yaml",
-                "ImuParams.yaml",
-                "LeftCameraParams.yaml",
-                "RightCameraParams.yaml",
-                "FrontendParams.yaml",
-                "BackendParams.yaml",
-                "LcdParams.yaml",
-                "DisplayParams.yaml",
-                "GnssParams.yaml") {}
+                "../params/Euroc/PipelineParams.yaml",
+                "../params/Euroc/ImuParams.yaml",
+                "../params/Euroc/LeftCameraParams.yaml",
+                "../params/Euroc/RightCameraParams.yaml",
+                "../params/Euroc/FrontendParams.yaml",
+                "../params/Euroc/BackendParams.yaml",
+                "../params/Euroc/LcdParams.yaml",
+                "../params/Euroc/DisplayParams.yaml",
+                "../params/Euroc/GnssParams.yaml") {}
 
 VioParams::VioParams(const std::string& params_folder_path,
                      const std::string& pipeline_params_filename,
@@ -80,7 +82,7 @@ VioParams::VioParams(const std::string& params_folder_path,
       lcd_params_(),
       gnss_params_(),
       display_params_(std::make_shared<DisplayParams>(DisplayType::kOpenCV)),
-      frontend_type_(FrontendType::kStereoImu),
+      frontend_type_(FrontendType::kGnssStereoImu),
       backend_type_(BackendType::kStructuralRegularities),
       parallel_run_(true),
       // Filepaths, keep defaults unless you changed file names.
@@ -104,7 +106,7 @@ VioParams::VioParams(const std::string& params_folder_path,
 
 bool VioParams::parseYAML(const std::string&) {
   // Create a parser for pipeline params.
-  YamlParser yaml_parser(pipeline_params_filepath_);
+  YamlParser yaml_parser(pipeline_params_filename_);
   int backend_type;
   yaml_parser.getYamlParam("backend_type", &backend_type);
   backend_type_ = static_cast<BackendType>(backend_type);
@@ -117,15 +119,13 @@ bool VioParams::parseYAML(const std::string&) {
   yaml_parser.getYamlParam("parallel_run", &parallel_run_);
 
   // Parse IMU params
-  parsePipelineParams(folder_path + '/' + imu_params_filename_, &imu_params_);
-
-  // Parse IMU params
-  parsePipelineParams(folder_path + '/' + gnss_params_filename_, &gnss_params_);
+  // parsePipelineParams(params_folder_path + '/' + imu_params_filename_, &imu_params_);
+  parsePipelineParams(imu_params_filename_, &imu_params_);
 
   // Parse Camera parameters
-  camera_params_.push_back(parseCameraParams(left_cam_params_filepath_));
-  if (frontend_type_ == FrontendType::kStereoImu) {
-    camera_params_.push_back(parseCameraParams(right_cam_params_filepath_));
+  camera_params_.push_back(parseCameraParams(left_cam_params_filename_));
+  if (frontend_type_ == FrontendType::kStereoImu || frontend_type_ == FrontendType::kGnssStereoImu) {
+    camera_params_.push_back(parseCameraParams(right_cam_params_filename_));
   }
 
   // Parse Backend params, needs a bit of help with backend_type
@@ -145,13 +145,18 @@ bool VioParams::parseYAML(const std::string&) {
     }
   }
   CHECK(backend_params_);
-  parsePipelineParams(backend_params_filepath_, backend_params_.get());
+  parsePipelineParams(backend_params_filename_, backend_params_.get());
 
   // Parse Frontend params.
-  parsePipelineParams(frontend_params_filepath_, &frontend_params_);
+  parsePipelineParams(frontend_params_filename_, &frontend_params_);
 
   // Parse LcdParams
-  parsePipelineParams(lcd_params_filepath_, &lcd_params_);
+  parsePipelineParams(lcd_params_filename_, &lcd_params_);
+
+   // Parse GNSS params
+  // parsePipelineParams(params_folder_path + '/' + gnss_params_filename_, &gnss_params_);
+  parsePipelineParams(gnss_params_filename_, &gnss_params_);
+  // LOG(INFO) << "parse gnss:" << gnss_params_filename_ << " AAAA " << gnss_params_.timestamp_;
 
   // Parse DisplayParams
   switch (display_type_) {
@@ -171,14 +176,14 @@ bool VioParams::parseYAML(const std::string&) {
     }
   }
   CHECK(display_params_);
-  parsePipelineParams(display_params_filepath_, display_params_.get());
+  parsePipelineParams(display_params_filename_, display_params_.get());
   display_params_->display_type_ = display_type_;
 
-  if (!odom_params_filepath_.empty()) {
-    OdometryParams odom_params;
-    parsePipelineParams(odom_params_filepath_, &odom_params);
-    odom_params_ = odom_params;
-  }
+  // if (!odom_params_filename_.empty()) {
+  //   OdometryParams odom_params;
+  //   parsePipelineParams(odom_params_filename_, &odom_params);
+  //   odom_params_ = odom_params;
+  // }
 
   return true;
 }
@@ -186,7 +191,6 @@ bool VioParams::parseYAML(const std::string&) {
 void VioParams::print() const {
   LOG(INFO) << std::string(10, '*') << " VIO PARAMS " << std::string(10, '*');
   imu_params_.print();
-  gnss_params_.print();
   for (const auto& cam : camera_params_) cam.print();
   frontend_params_.print();
   CHECK(backend_params_);
@@ -194,6 +198,7 @@ void VioParams::print() const {
   lcd_params_.print();
   CHECK(display_params_);
   display_params_->print();
+  gnss_params_.print();
   LOG(INFO) << "Frontend Type: " << VIO::to_underlying(frontend_type_);
   LOG(INFO) << "Backend Type: " << VIO::to_underlying(backend_type_);
   LOG(INFO) << "Display Type: " << VIO::to_underlying(display_type_);

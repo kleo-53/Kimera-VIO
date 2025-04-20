@@ -60,7 +60,7 @@ StereoDataProviderModule::getInputPacket() {
   timestamp_last_frame_ = timestamp;
 
   if (!shutdown_) {
-    auto packet = VIO::make_unique<StereoImuSyncPacket>(
+    auto packet = std::make_unique<StereoImuSyncPacket>(
         StereoFrame(left_frame_id,
                     timestamp,
                     *mono_imu_sync_packet->frame_,  // this copies...

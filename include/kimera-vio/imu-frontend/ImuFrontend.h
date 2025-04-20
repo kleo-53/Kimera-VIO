@@ -29,12 +29,48 @@
 #include <tuple>
 #include <utility>
 
+#include "kimera-vio/frontend/GnssTypes.h"
 #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 #include "kimera-vio/imu-frontend/ImuFrontendParams.h"
 #include "kimera-vio/utils/Macros.h"
 #include "kimera-vio/utils/ThreadsafeImuBuffer.h"
+#include "kimera-vio/utils/ThreadsafeGnssBuffer.h"
 
 namespace VIO {
+
+  class GnssData {
+    public:
+     KIMERA_POINTER_TYPEDEFS(GnssData);
+     KIMERA_DELETE_COPY_CONSTRUCTORS(GnssData);
+     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+   
+     GnssData() : gnss_buffer_(-1) {}
+   
+     utils::ThreadsafeGnssBuffer gnss_buffer_;
+   };
+
+  // class GnssData {
+  //   public:
+  //    KIMERA_POINTER_TYPEDEFS(GnssData);
+  //    KIMERA_DELETE_COPY_CONSTRUCTORS(GnssData);
+  //    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+   
+  //    // Imu buffer with virtually infinite memory.
+  //    GnssData() : gnss_buffer_(-1) {}
+   
+  //    // Checks for statistics..
+  //    // TODO(Toni): remove these and put in params.
+  //   //  double imu_rate_;
+  //   //  double nominal_imu_rate_;
+  //    double aaaaa;
+   
+  //    // Gnss data.
+  //    utils::ThreadsafeGnssBuffer gnss_buffer_;
+     
+  //   // public:
+  //   //  void print() const;
+  //  };
+  
 
 class ImuData {
  public:

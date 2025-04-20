@@ -12,23 +12,65 @@
  * @author Antoni Rosinol
  */
 
-#include "kimera-vio/frontend/GnssVisionImuFrontendModule.h"
+ #include "kimera-vio/frontend/GnssVisionImuFrontendModule.h"
 
-namespace VIO {
+ namespace VIO {
+ 
+ GnssVisionImuFrontendModule::GnssVisionImuFrontendModule(
+     InputQueue* input_queue,
+     bool parallel_run,
+     VisionImuFrontend::UniquePtr vio_frontend)
+     : SIMO(input_queue, "VioFrontend", parallel_run),
+       vio_frontend_(std::move(vio_frontend)) {
+   CHECK(vio_frontend_);
+ }
+ 
+ FrontendOutputPacketBase::UniquePtr GnssVisionImuFrontendModule::spinOnce(
+     FrontendInputPacketBase::UniquePtr input) {
+   CHECK(input);
+   return vio_frontend_->spinOnce(std::move(input));
+ }
+ 
+ }  // namespace VIO
+ 
 
-VisionImuFrontendModule::VisionImuFrontendModule(
-    InputQueue* input_queue,
-    bool parallel_run,
-    VisionImuFrontend::UniquePtr vio_frontend)
-    : SIMO(input_queue, "VioFrontend", parallel_run),
-      vio_frontend_(std::move(vio_frontend)) {
-  CHECK(vio_frontend_);
-}
+// /* ----------------------------------------------------------------------------
+//  * Copyright 2017, Massachusetts Institute of Technology,
+//  * Cambridge, MA 02139
+//  * All Rights Reserved
+//  * Authors: Luca Carlone, et al. (see THANKS for the full author list)
+//  * See LICENSE for the license information
+//  * -------------------------------------------------------------------------- */
 
-FrontendOutputPacketBase::UniquePtr VisionImuFrontendModule::spinOnce(
-    FrontendInputPacketBase::UniquePtr input) {
-  CHECK(input);
-  return vio_frontend_->spinOnce(std::move(input));
-}
+// /**
+//  * @file  VisionImuFrontendModule.cpp
+//  * @brief
+//  * @author Antoni Rosinol
+//  */
 
-}  // namespace VIO
+// #include "kimera-vio/frontend/GnssVisionImuFrontendModule.h"
+
+// namespace VIO {
+
+// GnssVisionImuFrontendModule::GnssVisionImuFrontendModule(
+//     InputQueue* input_queue,
+//     bool parallel_run,
+//     VisionImuFrontend::UniquePtr vio_frontend)
+//     : SIMO(input_queue, "VioFrontend", parallel_run),
+//       vio_frontend_(std::move(vio_frontend)) {
+//   CHECK(vio_frontend_);
+// }
+
+
+// // inline void registerGnssTimeShiftUpdateCallback(
+// //     const GnssVisionImuFrontend::GnssTimeShiftCallback& callback) {
+// //   vio_frontend_->registerGnssTimeShiftUpdateCallback(callback);
+// // }
+
+// // FrontendOutputPacketBase::UniquePtr spinOnce(
+// //     FrontendInputPacketBase::UniquePtr input) {
+// //   CHECK(input);
+// //   return vio_frontend_->spinOnce(std::move(input));
+// // }
+
+// }  // namespace VIO

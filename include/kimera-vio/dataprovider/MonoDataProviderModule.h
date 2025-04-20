@@ -36,6 +36,7 @@
 #include "kimera-vio/pipeline/Pipeline-definitions.h"
 #include "kimera-vio/pipeline/PipelineModule.h"
 #include "kimera-vio/utils/Macros.h"
+#include "kimera-vio/frontend/Gnss.h"
 
 namespace VIO {
 
@@ -73,6 +74,11 @@ class MonoDataProviderModule : public DataProviderModule {
     left_frame_queue_.pushBlockingIfFull(std::move(left_frame), 5u);
   }
 
+  // inline void fillGnssQueue(Gnss::UniquePtr gnss_data) {
+  //   CHECK(gnss_data);
+  //   gnss_queue_.push(std::move(gnss_data));
+  // }
+
  protected:
   /**
    * @brief getMonoImuSyncPacket Convenience function to return synced
@@ -105,6 +111,8 @@ class MonoDataProviderModule : public DataProviderModule {
  protected:
   //! Input data
   ThreadsafeQueue<Frame::UniquePtr> left_frame_queue_;
+  
+  ThreadsafeQueue<Gnss::UniquePtr> gnss_queue_;
 
   //! Used to handle when we're waiting for IMU data in sequential mode
   Frame::UniquePtr cached_left_frame_;

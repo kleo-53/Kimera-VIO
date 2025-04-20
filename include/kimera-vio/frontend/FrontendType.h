@@ -23,8 +23,9 @@ enum class FrontendType {
   kStereoImu = 1,
   //! Frontend that works with RGB + Depth camera and Imu
   kRgbdImu = 2,
+  kGnssStereoImu = 3,
   //! Placeholder for parsing
-  kUnknown = 3,
+  kUnknown = 4,
 };
 
 }  // namespace VIO

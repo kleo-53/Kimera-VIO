@@ -78,7 +78,7 @@ VioBackend::VioBackend(const Pose3& B_Pose_leftCam,
       timestamp_lkf_(-1),
       imu_bias_lkf_(ImuBias()),
       W_Vel_B_lkf_(gtsam::Vector3::Zero()),
-      W_Pose_B_lkf_(gtsam::Pose3::identity()),
+      W_Pose_B_lkf_(gtsam::Pose3::Identity()),
       imu_bias_prev_kf_(ImuBias()),
       B_Pose_leftCam_(B_Pose_leftCam),
       stereo_cal_(stereo_calibration),
@@ -86,7 +86,7 @@ VioBackend::VioBackend(const Pose3& B_Pose_leftCam,
       curr_kf_id_(0),
       landmark_count_(0),
       log_output_(log_output),
-      logger_(log_output ? VIO::make_unique<BackendLogger>() : nullptr) {
+      logger_(log_output ? std::make_unique<BackendLogger>() : nullptr) {
 // TODO the parsing of the params should be done inside here out from the
 // path to the params file, otherwise other derived VIO Backends will be
 // stuck with the parameters used by vanilla VIO, as there is no polymorphic
@@ -104,13 +104,13 @@ VioBackend::VioBackend(const Pose3& B_Pose_leftCam,
   gtsam::ISAM2Params isam_param;
   BackendParams::setIsam2Params(backend_params, &isam_param);
 
-  smoother_ = VIO::make_unique<Smoother>(backend_params.horizon_, isam_param);
+  smoother_ = std::make_unique<Smoother>(backend_params.horizon_, isam_param);
 #else  // BATCH SMOOTHER
   gtsam::LevenbergMarquardtParams lmParams;
   lmParams.setlambdaInitial(0.0);     // same as GN
   lmParams.setlambdaLowerBound(0.0);  // same as GN
   lmParams.setlambdaUpperBound(0.0);  // same as GN)
-  smoother_ = VIO::make_unique<Smoother>(vioParams.horizon_, lmParams);
+  smoother_ = std::make_unique<Smoother>(vioParams.horizon_, lmParams);
 #endif
 
   // Set parameters for all factors.
@@ -186,7 +186,7 @@ BackendOutput::UniquePtr VioBackend::spinOnce(const BackendInput& input) {
     }
 
     // Create Backend Output Payload.
-    output_payload = VIO::make_unique<BackendOutput>(
+    output_payload = std::make_unique<BackendOutput>(
         VioNavStateTimestamped(
             input.timestamp_, W_Pose_B_lkf_, W_Vel_B_lkf_, imu_bias_lkf_),
         // TODO(Toni): Make all below optional!!
@@ -853,7 +853,7 @@ void VioBackend::addNoMotionFactor(const FrameId& from_id,
       boost::make_shared<gtsam::BetweenFactor<gtsam::Pose3>>(
           gtsam::Symbol(kPoseSymbolChar, from_id),
           gtsam::Symbol(kPoseSymbolChar, to_id),
-          gtsam::Pose3::identity(),
+          gtsam::Pose3::Identity(),
           no_motion_prior_noise_));
 
   debug_info_.numAddedNoMotionF_++;

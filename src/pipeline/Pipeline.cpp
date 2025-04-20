@@ -59,6 +59,16 @@ DEFINE_bool(
     "Estimate the delay between the IMU and the camera. This enables "
     "estimating the time delay between the IMU and the camera (currently by "
     "cross-correlation between relative rotation angles).");
+DEFINE_bool(
+    do_coarse_gnss_camera_temporal_sync, 
+    false,  // значение по умолчанию
+    "Enable coarse temporal sync between GNSS and camera");
+DEFINE_bool(
+  do_fine_gnss_camera_temporal_sync,
+  false,
+  "Estimate the delay between the GNSS and the camera. This enables "
+  "estimating the time delay between the IMU and the camera (currently by "
+  "cross-correlation between relative rotation angles).");
 
 namespace VIO {
 
@@ -312,6 +322,7 @@ void Pipeline::resume() {
 
 void Pipeline::spinOnce(FrontendInputPacketBase::UniquePtr input) {
   CHECK(input);
+  LOG(INFO) << "Processing input with ts: " << input->timestamp_;
   if (!shutdown_) {
     // Push to Frontend input queue.
     VLOG(2) << "Push input payload to Frontend.";

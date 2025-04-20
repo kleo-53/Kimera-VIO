@@ -19,12 +19,13 @@
 
 namespace VIO {
 
-VisionImuFrontend::VisionImuFrontend(const FrontendParams& frontend_params,
-                                     const ImuParams& imu_params,
+VisionImuFrontend::VisionImuFrontend(const ImuParams& imu_params,
                                      const ImuBias& imu_initial_bias,
+                                     const FrontendParams& frontend_params,
                                      DisplayQueue* display_queue,
                                      bool log_output,
-                                     std::optional<OdometryParams> odom_params)
+                                     std::optional<OdometryParams> odom_params,
+                                     std::optional<GnssParams> gnss_params)
     : frontend_params_(frontend_params),
       frontend_state_(FrontendState::Bootstrap),
       frame_count_(0),
@@ -35,7 +36,8 @@ VisionImuFrontend::VisionImuFrontend(const FrontendParams& frontend_params,
       tracker_status_summary_(),
       display_queue_(display_queue),
       logger_(nullptr),
-      odom_params_(odom_params) {
+      odom_params_(odom_params),
+      gnss_params_(gnss_params) {
   imu_frontend_ = std::make_unique<ImuFrontend>(imu_params, imu_initial_bias);
   if (log_output) {
     logger_ = std::make_unique<FrontendLogger>();
@@ -50,12 +52,16 @@ VisionImuFrontend::~VisionImuFrontend() {
 FrontendOutputPacketBase::UniquePtr VisionImuFrontend::spinOnce(
     FrontendInputPacketBase::UniquePtr&& input) {
   const FrontendState& frontend_state = frontend_state_;
+  LOG(INFO) << "SPINNING VisionImuFrontend";
   switch (frontend_state) {
     case FrontendState::Bootstrap:
+    LOG(INFO) << "SPINNING VisionImuFrontend 1";
       return bootstrapSpin(std::move(input));
     case FrontendState::InitialTimeAlignment:
+    LOG(INFO) << "SPINNING VisionImuFrontend 2";
       return timeAlignmentSpin(std::move(input));
     case FrontendState::Nominal:
+    LOG(INFO) << "SPINNING VisionImuFrontend 3";
       return nominalSpin(std::move(input));
     default:
       LOG(FATAL) << "Unrecognized Frontend state.";

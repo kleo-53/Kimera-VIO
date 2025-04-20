@@ -32,6 +32,8 @@
 #include <gtsam/geometry/Pose3.h>
 
 #include "kimera-vio/frontend/StereoFrame.h"
+#include "kimera-vio/frontend/Gnss.h"
+#include "kimera-vio/frontend/GnssTypes.h"
 #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 #include "kimera-vio/logging/Logger.h"
 #include "kimera-vio/utils/YamlParser.h"
@@ -65,6 +67,7 @@ EurocDataProvider::EurocDataProvider(const std::string& dataset_path,
       initial_k_(initial_k),
       final_k_(final_k),
       imu_measurements_(),
+      // gnss_measurements_(),
       logger_(FLAGS_log_euroc_gt_data ? std::make_unique<EurocGtLogger>()
                                       : nullptr) {
   CHECK(!dataset_path_.empty())
@@ -118,6 +121,13 @@ bool EurocDataProvider::spin() {
       }
       is_imu_data_sent_ = true;
     }
+
+    // if (!is_gnss_data_sent_) {
+    //   if (gnss_callback_) {
+    //       sendGnssData();  // Отправляем GNSS данные
+    //   }
+    //   is_gnss_data_sent_ = true;
+    // }
 
     // Spin.
     CHECK_EQ(vio_params_.camera_params_.size(), 2u);
@@ -209,6 +219,17 @@ void EurocDataProvider::sendImuData() const {
     imu_single_callback_(imu_meas);
   }
 }
+
+// void EurocDataProvider::sendGnssData() const {
+//   CHECK(gnss_callback_) << "Did you forget to register the GNSS callback?";
+//   Timestamp previous_timestamp = -1;
+//   for (const GnssMeasurement& gnss_meas : gnss_measurements_) {
+//     CHECK_GT(gnss_meas.timestamp_, previous_timestamp)
+//         << "Euroc GNSS data is not in chronological order!";
+//     previous_timestamp = gnss_meas.timestamp_;
+//     gnss_callback_(gnss_meas);
+//   }
+// }
 
 /* -------------------------------------------------------------------------- */
 void EurocDataProvider::parse() {
@@ -433,6 +454,72 @@ bool EurocDataProvider::parseGtData(const std::string& input_dataset_path,
   return true;
 }
 
+// bool EurocDataProvider::parseGnssData(const std::string& input_dataset_path,
+//                                       const std::string& gnss_sensor_name) {
+//   CHECK(!input_dataset_path.empty());
+//   CHECK(!gnss_sensor_name.empty());
+
+//   std::string filename_data =
+//     input_dataset_path + "/mav0/" + gnss_sensor_name + "/data.csv";
+//   std::ifstream fin(filename_data.c_str());
+//   CHECK(fin.is_open()) << "Cannot open file: " << filename_data << '\n'
+//     << "Assuming dataset has no GNSS data...";
+
+//   // Skip the first line, containing the header.
+//   std::string line;
+//   std::getline(fin, line);
+
+//   Timestamp previous_timestamp = -1;
+
+//   // Read/store GNSS data, line by line.
+//   while (std::getline(fin, line)) {
+//     Timestamp timestamp = 0;
+//     std::vector<double> gnss_data_raw;
+//     for (size_t i = 0u; i < 8; i++) {  // 8 полей вместо 17
+//       int idx = line.find_first_of(',');
+//       if (i == 0u) {
+//         timestamp = std::stoll(line.substr(0, idx));
+//       } else {
+//         gnss_data_raw.push_back(std::stod(line.substr(0, idx)));
+//       }
+//       line = line.substr(idx + 1);
+//     }
+
+//     CHECK_GT(timestamp, previous_timestamp)
+//       << "GNSS data is not in chronological order!";
+//     previous_timestamp = timestamp;
+
+//     gtsam::Point3 position(gnss_data_raw[0], gnss_data_raw[1], gnss_data_raw[2]);
+//     // Quaternion w x y z
+//     gtsam::Rot3 rot = gtsam::Rot3::Quaternion(
+//       gnss_data_raw[3], gnss_data_raw[4], gnss_data_raw[5], gnss_data_raw[6]);
+
+//     // Sanity check for quaternion
+//     gtsam::Quaternion q = rot.toQuaternion();
+//     if (std::fabs(q.w() + gnss_data_raw[3]) < std::fabs(q.w() - gnss_data_raw[3])) {
+//       q.coeffs() = -1.0 * q.coeffs();
+//     }
+
+//     LOG_IF(FATAL,
+//       (fabs(q.w() - gnss_data_raw[3]) > 1e-3) ||
+//       (fabs(q.x() - gnss_data_raw[4]) > 1e-3) ||
+//       (fabs(q.y() - gnss_data_raw[5]) > 1e-3) ||
+//       (fabs(q.z() - gnss_data_raw[6]) > 1e-3))
+//       << "parseGnssData: wrong quaternion conversion"
+//       << "(" << q.w() << "," << gnss_data_raw[3] << ") "
+//       << "(" << q.x() << "," << gnss_data_raw[4] << ") "
+//       << "(" << q.y() << "," << gnss_data_raw[5] << ") "
+//       << "(" << q.z() << "," << gnss_data_raw[6] << ").";
+
+//     auto gnss_curr_pose_ = gtsam::Pose3(rot, position);
+
+//     gnss_measurements_.push_back(GnssMeasurement(timestamp, gnss_curr_pose_.translation()));
+//   }
+
+//   fin.close();
+//   return true;
+// }
+
 /* -------------------------------------------------------------------------- */
 bool EurocDataProvider::parseDataset() {
   // Parse IMU data.
@@ -456,6 +543,7 @@ bool EurocDataProvider::parseDataset() {
   // Parse Ground-Truth data.
   static const std::string ground_truth_name = "state_groundtruth_estimate0";
   is_gt_available_ = parseGtData(dataset_path_, ground_truth_name);
+  // is_gnss_available_ = parseGnssData(dataset_path_, kGnssName);
 
   clipFinalFrame();
 
@@ -468,6 +556,11 @@ bool EurocDataProvider::parseDataset() {
       LOG(ERROR) << "Requested ground-truth data logging but no ground-truth "
                     "data available.";
     }
+    // if (is_gnss_available_) {
+    //   LOG(INFO) << "gnss is ok";
+    // } else {
+    //   LOG(ERROR) << "Gnss is not ok";
+    // }
   }
 
   return true;

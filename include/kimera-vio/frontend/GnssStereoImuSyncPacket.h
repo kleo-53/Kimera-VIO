@@ -16,15 +16,18 @@
 
 #pragma once
 
+#include <optional>
 #include <gtsam/base/Vector.h>
 #include <gtsam/geometry/Pose3.h>
 
 #include "kimera-vio/frontend/Gnss.h"
+#include "kimera-vio/frontend/FrontendInputPacketBase.h"
+#include "kimera-vio/frontend/StereoFrame.h"
 #include "kimera-vio/frontend/StereoImuSyncPacket.h"
 
 namespace VIO {
 
-class GnssStereoImuSyncPacket : public StereoImuSyncPacket {
+class GnssStereoImuSyncPacket : public FrontendInputPacketBase {
  public:
   KIMERA_POINTER_TYPEDEFS(GnssStereoImuSyncPacket);
   KIMERA_DELETE_COPY_CONSTRUCTORS(GnssStereoImuSyncPacket);
@@ -33,15 +36,35 @@ class GnssStereoImuSyncPacket : public StereoImuSyncPacket {
   GnssStereoImuSyncPacket(const StereoFrame& stereo_frame,
                           const ImuStampS& imu_stamps,
                           const ImuAccGyrS& imu_accgyr,
-                          const Gnss& gnss_data,
-                          const ReinitPacket& reinit_packet = ReinitPacket());
-  GnssStereoImuSyncPacket(const StereoImuSyncPacket::UniquePtr&& sis_packet,
-                          const Gnss& gnss_data);
+                          const std::optional<gtsam::NavState> external_odometry = std::nullopt,
+                          const VIO::ReinitPacket& reinit_packet = ReinitPacket(),
+                          const Gnss& gnss_data = Gnss(0, gtsam::Vector3::Zero()));
+  // GnssStereoImuSyncPacket(const StereoImuSyncPacket::UniquePtr&& sis_packet,
+  //                         const Gnss& gnss_data);
+
+  // GnssStereoImuSyncPacket(const StereoImuSyncPacket::UniquePtr&& sis_packet,
+  //                         const Gnss& gnss_data = Gnss(0, gtsam::Vector3::Zero())) 
+  //                         :  StereoImuSyncPacket(
+  //                           sis_packet->getStereoFrame(),
+  //                           sis_packet->getImuStamps(),
+  //                           sis_packet->getImuAccGyrs(),
+  //                           std::nullopt,
+  //                           sis_packet->getReinitPacket()),
+  //                       gnss_data_(gnss_data) {}
   ~GnssStereoImuSyncPacket() = default;
 
+  inline const StereoFrame& getStereoFrame() const { return stereo_frame_; }
+  inline const ImuStampS& getImuStamps() const { return imu_stamps_; }
+  inline const ImuAccGyrS& getImuAccGyrs() const { return imu_accgyrs_; }
+  inline const ReinitPacket& getReinitPacket() const { return reinit_packet_; }
+  inline bool getReinitFlag() const { return reinit_packet_.getReinitFlag(); }
   inline const Gnss& getGnssData() const { return gnss_data_; }
+  
+  void print() const; // TOD: надеюсь так можно
 
  private:
+ const StereoFrame stereo_frame_;
+ const ReinitPacket reinit_packet_;
   const Gnss gnss_data_;
 };
 

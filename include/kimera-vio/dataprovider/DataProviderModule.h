@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>  // for move
 
+#include "kimera-vio/frontend/GnssStereoVisionImuFrontend-definitions.h"
 #include "kimera-vio/frontend/FrontendInputPacketBase.h"
 #include "kimera-vio/frontend/MonoImuSyncPacket.h"
 #include "kimera-vio/frontend/VisionImuFrontend-definitions.h"
@@ -34,6 +35,7 @@
 #include "kimera-vio/pipeline/PipelineModule.h"
 #include "kimera-vio/utils/Macros.h"
 #include "kimera-vio/utils/ThreadsafeOdometryBuffer.h"
+#include "kimera-vio/utils/ThreadsafeGnssBuffer.h"
 #include "kimera-vio/utils/UtilsNumerical.h"
 
 namespace VIO {
@@ -67,6 +69,24 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
   inline void fillImuQueue(const ImuMeasurement& imu_measurement) {
     imu_data_.imu_buffer_.addMeasurement(imu_measurement.timestamp_,
                                          imu_measurement.acc_gyr_);
+  }
+
+  inline void setGnssTimeShift(const double& gnss_time_shift_s) {
+    gnss_time_shift_ns_ = UtilsNumerical::SecToNsec(gnss_time_shift_s);
+  }
+
+  inline void doCoarseGnssCameraTemporalSync() {
+    do_coarse_gnss_camera_temporal_sync_ = true;
+  }
+
+  inline void fillGnssQueue(const GnssMeasurement& gnss_meas) {
+    // CHECK(gnss_data);
+    // gnss_data_.gnss_buffer_.addMeasurement(gnss_meas.timestamp_, gnss_meas);
+  }
+
+  inline void fillGnssQueue(const GnssMeasurements& gnss_measurements) {
+    // gnss_data_.gnss_buffer_.addMeasurements(gnss_measurements.timestamps_,
+                                          // gnss_measurements.poses_);
   }
 
   // TODO(Toni): remove, register at ctor level.
@@ -162,6 +182,9 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
   FrameAction getTimeSyncedImuMeasurements(const Timestamp& timestamp,
                                            ImuMeasurements* imu_meas);
 
+  FrameAction getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
+                                           GnssMeasurements* gnss_meas);
+
   void logQueryResult(const Timestamp& timestamp,
                       utils::ThreadsafeImuBuffer::QueryResult result) const;
 
@@ -173,14 +196,18 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
   //! Input data
   ImuData imu_data_;
   bool repeated_frame_;
-  Timestamp timestamp_last_frame_;
   bool do_coarse_imu_camera_temporal_sync_;
+  bool do_coarse_gnss_camera_temporal_sync_;
+  Timestamp timestamp_last_frame_;
   Timestamp imu_timestamp_correction_;
   std::atomic<Timestamp> imu_time_shift_ns_;  // t_imu = t_cam + imu_shift
-  std::atomic<Timestamp> external_odometry_time_shift_ns_;
+  std::atomic<Timestamp> gnss_time_shift_ns_;
+  
   PipelineOutputCallback vio_pipeline_callback_;
   //! External odometry source
+  std::atomic<Timestamp> external_odometry_time_shift_ns_;
   ThreadsafeOdometryBuffer::UniquePtr external_odometry_buffer_;
+  GnssData gnss_data_;
 };  // namespace VIO
 
 }  // namespace VIO

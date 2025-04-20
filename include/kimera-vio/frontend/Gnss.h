@@ -7,7 +7,7 @@
  * -------------------------------------------------------------------------- */
 
 /**
- * @file   Frame.h
+ * @file   Gnss.h
  * @brief  Class describing a single image
  * @author Luca Carlone
  */
@@ -23,9 +23,12 @@
 #include <cstdlib>
 #include <numeric>
 #include <string>
-#include <vector>
+// #include <vector>
 
+#include "kimera-vio/common/vio_types.h"
 #include "kimera-vio/pipeline/PipelinePayload.h"
+
+// #include <gtsam/base/Vector.h>
 
 namespace VIO {
 
@@ -40,30 +43,32 @@ class Gnss : public PipelinePayload {
   // Constructors.
   /// @param img: does a shallow copy of the image by defaults,
   ///  if Frame should have ownership of the image, clone it.
+
+  // Gnss() = default;
   Gnss(const Timestamp& timestamp, const gtsam::Vector3& pos)
       : PipelinePayload(timestamp), nav_pos_(pos) {}
 
-  Gnss(const Timestamp& timestamp, const gtsam::Vector3& pos, bool undefined)
-      : PipelinePayload(timestamp), nav_pos_(pos), undefined_(undefined_) {}
+  // Gnss(const Timestamp& timestamp, const gtsam::Vector3& pos, bool undefined)
+  //     : PipelinePayload(timestamp), nav_pos_(pos), undefined_(undefined_) {}
 
-  // TODO(TONI): delete all copy constructors!!
-  // Look at the waste of time this is :O
   Gnss(const Gnss& gnss)
       : PipelinePayload(gnss.timestamp_),
-        nav_pos_(gnss.nav_pos_),
-        undefined_(gnss.undefined_) {}
+        nav_pos_(gnss.nav_pos_) {}
+        // undefined_(gnss.undefined_) {}
+
+  // Gnss() = delete;
 
  public:
   /* ------------------------------------------------------------------------ */
   void print() const {
     LOG(INFO) << "Gnss position at timestamp: " << timestamp_ << "\n"
-              << "pos_: " << nav_pos_ << "\n"
-              << "undefined_: " << undefined_;
+              << "pos_: " << nav_pos_; // << "\n"
+              // << "undefined_: " << undefined_;
   }
 
  public:
   const gtsam::Vector3 nav_pos_;
-  bool undefined_ = true;
+  // bool undefined_ = true;
 };
 
 }  // namespace VIO
