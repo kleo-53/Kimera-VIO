@@ -44,7 +44,7 @@
    inline void fillRightFrameQueue(Frame::UniquePtr right_frame) {
      CHECK(data_provider_module_);
      CHECK(right_frame);
- 
+     LOG(INFO) << ">>> Got RIGHT frame: " << right_frame->timestamp_;
      // TODO(nathan) this is ugly
      dynamic_cast<GnssStereoDataProviderModule*>(data_provider_module_.get())
          ->fillRightFrameQueue(std::move(right_frame));

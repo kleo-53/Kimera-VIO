@@ -162,7 +162,8 @@ DECLARE_bool(log_euroc_gt_data);
  /* -------------------------------------------------------------------------- */
  bool GNSSVIODataProvider::spinOnce() {
    CHECK_LT(current_k_, std::numeric_limits<FrameId>::max())
-       << "Are you sure you've initialized current_k_?";
+   << "Are you sure you've initialized current_k_?";
+   LOG(INFO) << "spinOnce processed frame " << current_k_ - 1;
    if (current_k_ >= final_k_) {
      LOG(INFO) << "Finished spinning Euroc dataset.";
      return false;

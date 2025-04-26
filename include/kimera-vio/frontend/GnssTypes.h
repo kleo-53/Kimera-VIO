@@ -15,6 +15,7 @@ struct GnssMeasurement {
   gtsam::Vector3 pose_;
 };
 
+using GnssPose = gtsam::Vector3;
 using GnssStampS = Eigen::Matrix<Timestamp, 1, Eigen::Dynamic>;
 using GnssPoseS = Eigen::Matrix<double, 3, Eigen::Dynamic>;
 

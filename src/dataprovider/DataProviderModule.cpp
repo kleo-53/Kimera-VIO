@@ -20,7 +20,7 @@
 namespace VIO {
 
 using utils::ThreadsafeImuBuffer;
-// using utils::ThreadsafeGnssBuffer;
+using utils::ThreadsafeGnssBuffer;
 
 DataProviderModule::DataProviderModule(OutputQueue* output_queue,
                                        const std::string& name_id,
@@ -33,7 +33,9 @@ DataProviderModule::DataProviderModule(OutputQueue* output_queue,
       timestamp_last_frame_(InvalidTimestamp),
       imu_timestamp_correction_(0),
       imu_time_shift_ns_(0),
-      gnss_time_shift_ns_(0.108),
+      gnss_timestamp_correction_(0),
+      gnss_time_shift_ns_(1.08),
+      // gnss_time_shift_ns_(0.108),
       external_odometry_time_shift_ns_(0),
       external_odometry_buffer_(nullptr),
       gnss_data_() {
@@ -196,10 +198,10 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
       << "[s] (last) >= " << UtilsNumerical::NsecToSec(timestamp)
       << "[s] (curr)";
 
-  // if (gnss_data_.gnss_buffer_.size() == 0) {
-    // VLOG(1) << "No GNSS measurements available yet, dropping this frame.";
-    // return FrameAction::Drop;
-  // }
+  if (gnss_data_.gnss_buffer_.size() == 0) {
+    VLOG(1) << "No GNSS measurements available yet, dropping this frame.";
+    return FrameAction::Drop;
+  }
 
   if (timestamp_last_frame_ == InvalidTimestamp) {
     // TODO(Toni): wouldn't it be better to get all IMU measurements up to
@@ -212,50 +214,64 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
   }
   if (do_coarse_gnss_camera_temporal_sync_) {
     GnssMeasurement newest_gnss;
-    // gnss_data_.gnss_buffer_.getNewestGnssMeasurement(&newest_gnss);
+    gnss_data_.gnss_buffer_.getNewestGnssMeasurement(&newest_gnss);
+    // gnss_data_.gnss_buffer_.getNearest()
     // this is delta = imu.timestamp - frame.timestamp so that when querying,
     // we get query = new_frame.timestamp + delta = frame_delta + imu.timestamp
-    // auto gnss_timestamp_correction_ = newest_gnss.timestamp_ - timestamp;
+    gnss_timestamp_correction_ = newest_gnss.timestamp_ - timestamp;
     do_coarse_gnss_camera_temporal_sync_ = false;
+    LOG(WARNING) << "Computed intial coarse time alignment of "
+                 << UtilsNumerical::NsecToSec(imu_timestamp_correction_)
+                 << "[s]";
   }
 
-  const Timestamp curr_gnss_time_shift = gnss_time_shift_ns_;
-  // const Timestamp gnss_timestamp_last_frame =
-      // timestamp_last_frame_ + curr_gnss_time_shift;
-  // const Timestamp gnss_timestamp_curr_frame =
-      // timestamp + curr_gnss_time_shift;
+  // const Timestamp curr_gnss_time_shift = gnss_time_shift_ns_;
+  const Timestamp gnss_timestamp_last_frame =
+      timestamp_last_frame_ + gnss_timestamp_correction_;// + curr_gnss_time_shift;
+  const Timestamp gnss_timestamp_curr_frame =
+      timestamp + gnss_timestamp_correction_;// + curr_gnss_time_shift;
 
   // NOTE: using interpolation on both borders instead of just the upper 
   // as before because without a measurement on the left-hand side we are 
   // missing some of the motion or overestimating depending on the 
   // last timestamp's relationship to the nearest imu timestamp. 
   // For some datasets this caused an incorrect motion estimate
-  // ThreadsafeGnssBuffer::QueryResult query_result =
-  //     gnss_data_.gnss_buffer_.getGnssDataInterpolatedBorders(
-  //         gnss_timestamp_last_frame,
-  //         gnss_timestamp_curr_frame,
-  //         &gnss_meas->timestamps_,
-  //         &imu_meas->acc_gyr_);
+
+  // TOD: было так, но я хочу полегковеснее gnss buffer сделать
+  ThreadsafeGnssBuffer::QueryResult query_result =
+      gnss_data_.gnss_buffer_.getGnssDataInterpolatedBorders(
+          gnss_timestamp_last_frame,
+          gnss_timestamp_curr_frame,
+          &gnss_meas->timestamps_,
+          &gnss_meas->poses_); //,
+          // &imu_meas->acc_gyr_);
   // logQueryResult(timestamp, query_result);
+  LOG(INFO) << "Query GNSS at " << gnss_timestamp_curr_frame;
+  // ThreadsafeGnssBuffer::QueryResult query_result = 
+  //   gnss_data_.gnss_buffer_.getNearest(
+  //     gnss_timestamp_curr_frame
+  //   );
 
   // auto query_result = ThreadsafeGnssBuffer::QueryResult::kDataNeverAvailable;
-  // switch (query_result) {
-  //   case ThreadsafeImuBuffer::QueryResult::kDataAvailable:
-  //     break;  // handle this below
-  //   case ThreadsafeImuBuffer::QueryResult::kDataNotYetAvailable:
-  //     return FrameAction::Wait;
-  //   case ThreadsafeImuBuffer::QueryResult::kQueueShutdown:
-  //     MISO::shutdown();
-  //     return FrameAction::Drop;
-  //   case ThreadsafeImuBuffer::QueryResult::kDataNeverAvailable:
-  //     timestamp_last_frame_ = timestamp;
-  //     return FrameAction::Drop;
-  //   case ThreadsafeImuBuffer::QueryResult::kTooFewMeasurementsAvailable:
-  //   default:
-  //     return FrameAction::Drop;
-  // }
+  switch (query_result) {
+    case ThreadsafeGnssBuffer::QueryResult::kDataAvailable:
+      break;  // handle this below
+    case ThreadsafeGnssBuffer::QueryResult::kDataNotYetAvailable:
+      return FrameAction::Wait;
+    case ThreadsafeGnssBuffer::QueryResult::kQueueShutdown:
+      MISO::shutdown();
+      return FrameAction::Drop;
+    case ThreadsafeGnssBuffer::QueryResult::kDataNeverAvailable:
+      timestamp_last_frame_ = timestamp;
+      return FrameAction::Drop;
+    case ThreadsafeGnssBuffer::QueryResult::kTooFewMeasurementsAvailable:
+    default:
+      return FrameAction::Drop;
+  }
+  gnss_meas->timestamps_.array() -=
+  gnss_timestamp_correction_;// + curr_gnss_time_shift;
 
-  gnss_meas->timestamps_.array() -= curr_gnss_time_shift;
+  gnss_meas->timestamps_.array() -= gnss_timestamp_correction_;// + curr_gnss_time_shift;
   VLOG(10) << "////////////////////////////////////////// Creating packet!\n"
            << "STAMPS GNSS rows : \n"
            << gnss_meas->timestamps_.rows() << '\n'
@@ -270,7 +286,7 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
 
 void DataProviderModule::shutdownQueues() {
   imu_data_.imu_buffer_.shutdown();
-  // gnss_data_.gnss_buffer_.shutdown();
+  gnss_data_.gnss_buffer_.shutdown();
   MISO::shutdownQueues();
 }
 

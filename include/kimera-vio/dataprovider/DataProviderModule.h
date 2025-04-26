@@ -35,7 +35,7 @@
 #include "kimera-vio/pipeline/PipelineModule.h"
 #include "kimera-vio/utils/Macros.h"
 #include "kimera-vio/utils/ThreadsafeOdometryBuffer.h"
-#include "kimera-vio/utils/ThreadsafeGnssBuffer.h"
+// #include "kimera-vio/utils/ThreadsafeGnssBuffer.h"
 #include "kimera-vio/utils/UtilsNumerical.h"
 
 namespace VIO {
@@ -81,13 +81,19 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
 
   inline void fillGnssQueue(const GnssMeasurement& gnss_meas) {
     // CHECK(gnss_data);
-    // gnss_data_.gnss_buffer_.addMeasurement(gnss_meas.timestamp_, gnss_meas);
+    // LOG(INFO) << "GNSS ADDED TO BUFFER: " << gnss_meas.timestamp_ - gnss_time_shift_ns_;
+    // gnss_data_.gnss_buffer_.addMeasurement(gnss_meas.timestamp_ - gnss_time_shift_ns_, gnss_meas);
+    // LOG(INFO) << "gnss_time_shift_ns_: " << gnss_time_shift_ns_;
+    const Timestamp corrected_timestamp =
+        gnss_meas.timestamp_;
+    // LOG(INFO) << "GNSS ADDED TO BUFFER: " << corrected_timestamp;
+    gnss_data_.gnss_buffer_.addMeasurement(corrected_timestamp, gnss_meas.pose_);
   }
 
-  inline void fillGnssQueue(const GnssMeasurements& gnss_measurements) {
-    // gnss_data_.gnss_buffer_.addMeasurements(gnss_measurements.timestamps_,
-                                          // gnss_measurements.poses_);
-  }
+  // inline void fillGnssQueue(const GnssMeasurements& gnss_measurements) {
+  //   // gnss_data_.gnss_buffer_.addMeasurements(gnss_measurements.timestamps_,
+  //                                         // gnss_measurements.poses_);
+  // }
 
   // TODO(Toni): remove, register at ctor level.
   inline void registerVioPipelineCallback(const PipelineOutputCallback& cb) {
@@ -201,6 +207,7 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
   Timestamp timestamp_last_frame_;
   Timestamp imu_timestamp_correction_;
   std::atomic<Timestamp> imu_time_shift_ns_;  // t_imu = t_cam + imu_shift
+  Timestamp gnss_timestamp_correction_;
   std::atomic<Timestamp> gnss_time_shift_ns_;
   
   PipelineOutputCallback vio_pipeline_callback_;

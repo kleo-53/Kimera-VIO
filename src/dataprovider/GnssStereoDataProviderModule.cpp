@@ -40,10 +40,11 @@
    //! Get left image + IMU data
    MonoImuSyncPacket::UniquePtr mono_imu_sync_packet =
        getMonoImuSyncPacket(false);
-   if (!mono_imu_sync_packet) {
-    LOG(INFO) << "RETURN WOUT PACKET";
-     return nullptr;
-   }
+    if (!mono_imu_sync_packet) {
+      LOG(WARNING) << "RETURN NULL: mono_imu_sync_packet is nullptr!";
+      return nullptr;
+    }
+    LOG(INFO) << "MonoImuSyncPacket created! Timestamp: " << mono_imu_sync_packet->timestamp_;
  
    const Timestamp& timestamp = mono_imu_sync_packet->timestamp_;
    const FrameId& left_frame_id = mono_imu_sync_packet->frame_->id_;
@@ -61,31 +62,60 @@
      return nullptr;
    }
    CHECK(right_frame_payload);
-   timestamp_last_frame_ = timestamp;
-   static int gnss_counter = 0;
-     Gnss::UniquePtr gnss_data_payload = nullptr;
-     do {
-       auto gnss_shared = gnss_queue_.popBlocking();
-       gnss_data_payload = std::move(*gnss_shared);
-       if (!gnss_data_payload) {
-         LOG(WARNING) << "Missing GNSS data for frame, continuing without it";
-         // return;
-         break;
-       }
-       gnss_counter++;
-     } while (gnss_counter % 10 != 0);
+   LOG(INFO) << "OK AFTER RIGHT";
+  //  timestamp_last_frame_ = timestamp;
+   //! Retrieve IMU data.
+  GnssMeasurements gnss_meas;
+  FrameAction action = getTimeSyncedGnssMeasurements(timestamp, &gnss_meas);
+  switch (action) {
+    case FrameAction::Use:
+      break;
+    case FrameAction::Wait:
+      // cached_left_frame_ = std::move(left_frame_payload);
+      return nullptr;
+    case FrameAction::Drop:
+      return nullptr;
+  }
+
+//   // LOG(INFO) << "OK AFTER IMU";
+//   //! Send synchronized left frame and IMU data. // вот тут возвращает null видимо
+//   return std::make_unique<MonoImuSyncPacket>(
+//       std::move(left_frame_payload), imu_meas.timestamps_, imu_meas.acc_gyr_, std::nullopt);
+// }
+
+
+  //  static int gnss_counter = 0;
+  //    Gnss::UniquePtr gnss_data_payload = nullptr;
+  //    do {
+  //      auto gnss_shared = gnss_queue_.popBlocking();
+  //      gnss_data_payload = std::move(*gnss_shared);
+  //      if (!gnss_data_payload) {
+  //        LOG(WARNING) << "Missing GNSS data for frame, continuing without it";
+  //        // return;
+  //        break;
+  //      }
+  //      gnss_counter++;
+  //    } while (gnss_counter % 10 != 0);
    
-     // Gnss::UniquePtr gnss_data_payload = nullptr;
-     if (!MISO::syncQueue(timestamp, &gnss_queue_, &gnss_data_payload)) {
-       LOG(INFO) << "GNSS timestamp: " << gnss_data_payload->timestamp_;
-       LOG(INFO) << "Frame timestamp: " << timestamp;
-       LOG(INFO) << "Absolute difference: " 
-               << fabs(gnss_data_payload->timestamp_ - timestamp);
-       LOG(INFO) << "Missing gnss data for frames, continue";
-       // gnss_data_payload =
-       //     std::make_unique<Gnss>(packet->timestamp_, gtsam::Vector3()); // TOD: тут было true
-     }
-     CHECK(gnss_data_payload);
+    //  Gnss::UniquePtr gnss_data_payload = nullptr;
+    //  auto a = MISO::syncQueue(timestamp, &gnss_queue_, &gnss_data_payload);
+    //  LOG(INFO) << "AFTER SYNC QUEUE: " << a;
+    // if (!a) {
+      //  LOG(INFO) << "GNSS timestamp: " << gnss_data_payload->timestamp_;
+      //  LOG(INFO) << "Frame timestamp: " << timestamp;
+      //  LOG(INFO) << "Absolute difference: " 
+              //  << fabs(gnss_data_payload->timestamp_ - timestamp);
+      //  LOG(WARNING) << "Missing gnss data for frames, return";
+      //  return nullptr;
+      //  gnss_data_payload =
+      //      std::make_unique<Gnss>(timestamp, gtsam::Vector3()); // TOD: тут было true
+    //  }
+    //  LOG(INFO) << "GNSS timestamp: " << gnss_data_payload->timestamp_;
+    //  LOG(INFO) << "Frame timestamp: " << timestamp;
+    //  LOG(INFO) << "Absolute difference: " 
+            //  << fabs(gnss_data_payload->timestamp_ - timestamp);
+    //  CHECK(gnss_data_payload);
+     LOG(INFO) << "shutdown" << shutdown_;
      if (!shutdown_) {
          LOG(INFO) << "getInputPacket() called for GNSS pipeline";
        auto packet = std::make_unique<GnssStereoImuSyncPacket>(
@@ -96,10 +126,12 @@
            // be given in PipelineParams.
            mono_imu_sync_packet->imu_stamps_,
            mono_imu_sync_packet->imu_accgyrs_,
+           gnss_meas.timestamps_,
+           gnss_meas.poses_,
            std::nullopt,
-           VIO::ReinitPacket(),
-           Gnss(gnss_data_payload->timestamp_,
-                 gnss_data_payload->nav_pos_));
+           VIO::ReinitPacket());
+          //  Gnss(gnss_data_payload->timestamp_,
+          //        gnss_data_payload->nav_pos_));
        if (send_packet_) {
          LOG(INFO) << "GNSS PACKAGE SENT";
          CHECK(vio_pipeline_callback_);

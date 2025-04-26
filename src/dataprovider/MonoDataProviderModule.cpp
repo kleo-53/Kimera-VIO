@@ -14,6 +14,7 @@
  */
 
 #include <utility>  // for move
+#include <optional>
 
 #include "kimera-vio/dataprovider/MonoDataProviderModule.h"
 #include "kimera-vio/frontend/MonoImuSyncPacket.h"
@@ -122,19 +123,23 @@ MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
 
   //! Send synchronized left frame and IMU data. // вот тут возвращает null видимо
   return std::make_unique<MonoImuSyncPacket>(
-      std::move(left_frame_payload), imu_meas.timestamps_, imu_meas.acc_gyr_);
+      std::move(left_frame_payload), imu_meas.timestamps_, imu_meas.acc_gyr_, std::nullopt);
 }
 
 Frame::UniquePtr MonoDataProviderModule::getLeftFramePayload() {
+  // LOG(INFO) << "TAKE LEFT FRAME PAYLOAD TO mono packet";
   bool queue_state = false;
   Frame::UniquePtr left_frame_payload = nullptr;
   if (MISO::parallel_run_) {
+    // LOG(INFO) << "1";
     queue_state = left_frame_queue_.popBlocking(left_frame_payload);
   } else {
+    // LOG(INFO) << "2";
     queue_state = left_frame_queue_.pop(left_frame_payload);
   }
 
   if (!queue_state) {
+    // LOG(INFO) << "Module: " << MISO::name_id_ << " - queue is down, return null";
     LOG_IF(WARNING, MISO::parallel_run_ && !MISO::shutdown_)
         << "Module: " << MISO::name_id_ << " - queue is down";
     VLOG_IF(1, !MISO::parallel_run_)
@@ -142,7 +147,7 @@ Frame::UniquePtr MonoDataProviderModule::getLeftFramePayload() {
     return nullptr;
   }
   CHECK(left_frame_payload);
-
+//  LOG(INFO) << "OK";
   return left_frame_payload;
 }
 

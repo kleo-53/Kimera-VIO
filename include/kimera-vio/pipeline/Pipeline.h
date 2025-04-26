@@ -64,6 +64,7 @@ class Pipeline {
   inline void fillLeftFrameQueue(Frame::UniquePtr left_frame) {
     CHECK(data_provider_module_);
     CHECK(left_frame);
+    LOG(INFO) << ">>> Got LEFT frame: " << left_frame->timestamp_;
     data_provider_module_->fillLeftFrameQueue(std::move(left_frame));
   }
 
@@ -76,11 +77,13 @@ class Pipeline {
 
   inline void fillSingleImuQueue(const ImuMeasurement& imu_measurement) {
     CHECK(data_provider_module_);
+    // LOG(INFO) << ">>> Got IMU: " << imu_measurement.timestamp_;
     data_provider_module_->fillImuQueue(imu_measurement);
   }
 
   inline void fillMultiImuQueue(const ImuMeasurements& imu_measurements) {
     CHECK(data_provider_module_);
+    // LOG(INFO) << ">>> Got Multi IMU: ";// << imu.timestamp_;
     data_provider_module_->fillImuQueue(imu_measurements);
   }
 
@@ -92,6 +95,7 @@ class Pipeline {
 
   inline void fillGnssQueue(const GnssMeasurement& gnss_measurement) {
     CHECK(data_provider_module_);
+    // LOG(INFO) << ">>> Got GNSS: " << gnss_measurement.timestamp_;
     data_provider_module_->fillGnssQueue(gnss_measurement);
   }
 

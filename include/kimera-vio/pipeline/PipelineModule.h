@@ -196,20 +196,20 @@ class PipelineModule : public PipelineModuleBase {
       is_thread_working_ = false;
       InputUniquePtr input = getInputPacket();
       is_thread_working_ = true;
-    // LOG(INFO) << "WE ARE IN SPIN 2";
+    LOG(INFO) << "WE ARE IN SPIN 2";
       if (input) {
-        // LOG(INFO) << "WE ARE IN SPIN 3";
+        LOG(INFO) << "WE ARE IN SPIN 3";
         auto tic = utils::Timer::tic();
         // Transfer the ownership of input to the actual pipeline module.
         // From this point on, you cannot use input, since spinOnce owns it.
         OutputUniquePtr output = spinOnce(std::move(input));
         if (output) {
-          // LOG(INFO) << "WE ARE IN SPIN 4";
+          LOG(INFO) << "WE ARE IN SPIN 4";
           // Received a valid output, send to output queue
           if (!pushOutputPacket(std::move(output))) {
             LOG(WARNING) << "Module: " << name_id_ << " - Output push failed.";
           } else {
-            // LOG(INFO) << "WE ARE IN SPIN 5; " << "Module: " << name_id_ << " - Pushed output.";;
+            LOG(INFO) << "WE ARE IN SPIN 5; " << "Module: " << name_id_ << " - Pushed output.";;
             VLOG(2) << "Module: " << name_id_ << " - Pushed output.";
           }
         } else {

@@ -25,17 +25,19 @@ GnssStereoImuSyncPacket::GnssStereoImuSyncPacket(
     const StereoFrame& stereo_frame,
     const ImuStampS& imu_stamps,
     const ImuAccGyrS& imu_accgyrs,
+    const GnssStampS& gnss_stamps,
+    const GnssPoseS& gnss_data,
     const std::optional<gtsam::NavState> external_odometry,
-    const ReinitPacket& reinit_packet,
-    const Gnss& gnss_data)
+    const ReinitPacket& reinit_packet)
     : FrontendInputPacketBase(
       stereo_frame.timestamp_,
       imu_stamps,
       imu_accgyrs,
       external_odometry),
       stereo_frame_(stereo_frame),
-      reinit_packet_(reinit_packet),
-      gnss_data_(gnss_data) {
+      gnss_stamps_(gnss_stamps),
+      gnss_data_(gnss_data),
+        reinit_packet_(reinit_packet) {
   // The timestamp of the last IMU measurement must correspond to the timestamp
   // of the stereo frame. In case there is no IMU measurement with exactly
   // the same timestamp as the stereo frame, the user should interpolate
@@ -80,8 +82,8 @@ void GnssStereoImuSyncPacket::print() const {
   }
   // if (gnss_data_) {
     LOG(INFO) << "GNSS Data is present.\n"
-                << "GNSS Timestamp: " << gnss_data_.timestamp_ << '\n'
-                << "GNSS Position: " << gnss_data_.nav_pos_.transpose() << '\n';
+                << "GNSS Timestamp: " << gnss_stamps_.rows() << '\n'
+                << "GNSS Position: " << gnss_data_.rows() << '\n';
   // } else {
     // LOG(INFO) << "No GNSS Data.\n";
   // }
