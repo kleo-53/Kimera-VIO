@@ -208,25 +208,4 @@ std::vector<GnssMeasurement> gnss_measurements_; // TOD: или gnss
 EurocGtLogger::UniquePtr logger_;
 };
 
-// class MonoEurocDataProvider : public EurocDataProvider {
-// public:
-// KIMERA_DELETE_COPY_CONSTRUCTORS(MonoEurocDataProvider);
-// KIMERA_POINTER_TYPEDEFS(MonoEurocDataProvider);
-// EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-// MonoEurocDataProvider(const std::string& dataset_path,
-//        const int& initial_k,
-//        const int& final_k,
-//        const VioParams& vio_params);
-
-// explicit MonoEurocDataProvider(const VioParams& vio_params);
-
-// virtual ~MonoEurocDataProvider();
-
-// bool spin() override;
-
-// protected:
-// bool spinOnce() override;
-// };
-
 }  // namespace VIO

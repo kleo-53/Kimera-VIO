@@ -35,8 +35,6 @@
 #include "kimera-vio/frontend/StereoMatchingParams.h"
 #include "kimera-vio/logging/Logger.h"
 #include "kimera-vio/utils/Macros.h"
-#include "kimera-vio/frontend/GnssTypes.h"
-#include "kimera-vio/frontend/Gnss.h"
 
 namespace VIO {
 
@@ -109,8 +107,6 @@ class EurocDataProvider : public DataProviderInterface {
    */
   void sendImuData() const;
 
-  // void sendGnssData() const;
-
   /**
    * @brief parseDataset Parse camera, gt, and imu data if using
    * different Euroc format.
@@ -124,9 +120,6 @@ class EurocDataProvider : public DataProviderInterface {
 
   bool parseGtData(const std::string& input_dataset_path,
                    const std::string& gtSensorName);
-
-  // bool parseGnssData(const std::string& input_dataset_path,
-  //                   const std::string& gnss_sensor_name);
 
   bool parseCameraData(const std::string& cam_name,
                        CameraImageLists* cam_list_i);
@@ -221,7 +214,6 @@ class EurocDataProvider : public DataProviderInterface {
   std::map<std::string, CameraImageLists> camera_image_lists_;
 
   bool is_gt_available_;
-  // bool is_gnss_available_;
   std::string dataset_name_;
   std::string dataset_path_;
 
@@ -234,16 +226,12 @@ class EurocDataProvider : public DataProviderInterface {
   //! Flag to signal if the IMU data has been sent to the VIO pipeline
   bool is_imu_data_sent_ = false;
 
-  // bool is_gnss_data_sent_ = false;
-
   const std::string kLeftCamName = "cam0";
   const std::string kRightCamName = "cam1";
   const std::string kImuName = "imu0";
-  // const std::string kGnssName = "gnss0";
 
   //! Pre-stored imu-measurements
   std::vector<ImuMeasurement> imu_measurements_;
-  // std::vector<GnssMeasurement> gnss_measurements_; // TOD: или gnss
 
 
   EurocGtLogger::UniquePtr logger_;

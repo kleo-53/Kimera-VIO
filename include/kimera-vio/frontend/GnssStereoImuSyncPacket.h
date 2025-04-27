@@ -38,20 +38,8 @@ class GnssStereoImuSyncPacket : public FrontendInputPacketBase {
                           const ImuAccGyrS& imu_accgyr,
                           const GnssStampS& gnss_stamps,
                           const GnssPoseS& gnss_data,
-                          const std::optional<gtsam::NavState> external_odometry = std::nullopt,
+                          std::optional<gtsam::NavState> external_odometry = std::nullopt,
                           const VIO::ReinitPacket& reinit_packet = ReinitPacket());
-  // GnssStereoImuSyncPacket(const StereoImuSyncPacket::UniquePtr&& sis_packet,
-  //                         const Gnss& gnss_data);
-
-  // GnssStereoImuSyncPacket(const StereoImuSyncPacket::UniquePtr&& sis_packet,
-  //                         const Gnss& gnss_data = Gnss(0, gtsam::Vector3::Zero())) 
-  //                         :  StereoImuSyncPacket(
-  //                           sis_packet->getStereoFrame(),
-  //                           sis_packet->getImuStamps(),
-  //                           sis_packet->getImuAccGyrs(),
-  //                           std::nullopt,
-  //                           sis_packet->getReinitPacket()),
-  //                       gnss_data_(gnss_data) {}
   ~GnssStereoImuSyncPacket() = default;
 
   inline const StereoFrame& getStereoFrame() const { return stereo_frame_; }

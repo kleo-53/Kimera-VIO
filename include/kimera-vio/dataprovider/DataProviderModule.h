@@ -81,7 +81,6 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
 
   inline void fillGnssQueue(const GnssMeasurement& gnss_meas) {
     // CHECK(gnss_data);
-    // LOG(INFO) << "GNSS ADDED TO BUFFER: " << gnss_meas.timestamp_ - gnss_time_shift_ns_;
     // gnss_data_.gnss_buffer_.addMeasurement(gnss_meas.timestamp_ - gnss_time_shift_ns_, gnss_meas);
     // LOG(INFO) << "gnss_time_shift_ns_: " << gnss_time_shift_ns_;
     const Timestamp corrected_timestamp =
@@ -89,11 +88,6 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
     // LOG(INFO) << "GNSS ADDED TO BUFFER: " << corrected_timestamp;
     gnss_data_.gnss_buffer_.addMeasurement(corrected_timestamp, gnss_meas.pose_);
   }
-
-  // inline void fillGnssQueue(const GnssMeasurements& gnss_measurements) {
-  //   // gnss_data_.gnss_buffer_.addMeasurements(gnss_measurements.timestamps_,
-  //                                         // gnss_measurements.poses_);
-  // }
 
   // TODO(Toni): remove, register at ctor level.
   inline void registerVioPipelineCallback(const PipelineOutputCallback& cb) {

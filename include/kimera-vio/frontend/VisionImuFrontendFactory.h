@@ -87,21 +87,11 @@ class VisionImuFrontendFactory {
                                                          display_queue,
                                                          log_output);
       }
-      // case FrontendType::kGnssStereoImu: {
-      //   return std::make_unique<GnssStereoVisionImuFrontend>(imu_params,
-      //                                                    imu_initial_bias,
-      //                                                    frontend_params,
-      //                                                    stereo_camera,
-      //                                                    gnss_params,
-      //                                                    display_queue,
-      //                                                    log_output);
-      // }
       default: {
         LOG(FATAL) << "Requested frontend type is not supported.\n"
                    << "Currently supported frontend types:\n"
                    << "0: Mono + IMU \n"
                    << "1: Stereo + IMU \n"
-                  //  << "3: Gnss + Stereo + IMU \n"
                    << " but requested frontend: "
                    << static_cast<int>(frontend_type);
       }

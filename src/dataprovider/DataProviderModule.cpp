@@ -199,7 +199,8 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
       << "[s] (curr)";
 
   if (gnss_data_.gnss_buffer_.size() == 0) {
-    VLOG(1) << "No GNSS measurements available yet, dropping this frame.";
+    // VLOG(1) << "No GNSS measurements available yet, dropping this frame.";
+    LOG(WARNING) << "No GNSS measurements available yet, dropping this frame.";
     return FrameAction::Drop;
   }
 
@@ -266,12 +267,16 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
       return FrameAction::Drop;
     case ThreadsafeGnssBuffer::QueryResult::kTooFewMeasurementsAvailable:
     default:
+      LOG(WARNING) << "GNSS data unavailable, continuing without GNSS.";
+      // break;
       return FrameAction::Drop;
   }
-  gnss_meas->timestamps_.array() -=
-  gnss_timestamp_correction_;// + curr_gnss_time_shift;
-
+  if (gnss_meas->timestamps_.cols() == 0 || gnss_meas->poses_.cols() == 0) {
+    return FrameAction::Drop;
+  }
   gnss_meas->timestamps_.array() -= gnss_timestamp_correction_;// + curr_gnss_time_shift;
+
+  // gnss_meas->timestamps_.array() -= gnss_timestamp_correction_;// + curr_gnss_time_shift;
   VLOG(10) << "////////////////////////////////////////// Creating packet!\n"
            << "STAMPS GNSS rows : \n"
            << gnss_meas->timestamps_.rows() << '\n'

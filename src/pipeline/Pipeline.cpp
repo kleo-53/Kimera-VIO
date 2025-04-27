@@ -322,7 +322,7 @@ void Pipeline::resume() {
 
 void Pipeline::spinOnce(FrontendInputPacketBase::UniquePtr input) {
   CHECK(input);
-  LOG(INFO) << "Processing input with ts: " << input->timestamp_;
+  LOG(INFO) << "Processing input with ts: " << input->timestamp_; // TOD: убрать!
   if (!shutdown_) {
     // Push to Frontend input queue.
     VLOG(2) << "Push input payload to Frontend.";

@@ -52,16 +52,12 @@ VisionImuFrontend::~VisionImuFrontend() {
 FrontendOutputPacketBase::UniquePtr VisionImuFrontend::spinOnce(
     FrontendInputPacketBase::UniquePtr&& input) {
   const FrontendState& frontend_state = frontend_state_;
-  LOG(INFO) << "SPINNING VisionImuFrontend";
   switch (frontend_state) {
     case FrontendState::Bootstrap:
-    LOG(INFO) << "SPINNING VisionImuFrontend 1";
       return bootstrapSpin(std::move(input));
     case FrontendState::InitialTimeAlignment:
-    LOG(INFO) << "SPINNING VisionImuFrontend 2";
       return timeAlignmentSpin(std::move(input));
     case FrontendState::Nominal:
-    LOG(INFO) << "SPINNING VisionImuFrontend 3";
       return nominalSpin(std::move(input));
     default:
       LOG(FATAL) << "Unrecognized Frontend state.";

@@ -23,12 +23,9 @@
 #include <cstdlib>
 #include <numeric>
 #include <string>
-// #include <vector>
 
 #include "kimera-vio/common/vio_types.h"
 #include "kimera-vio/pipeline/PipelinePayload.h"
-
-// #include <gtsam/base/Vector.h>
 
 namespace VIO {
 

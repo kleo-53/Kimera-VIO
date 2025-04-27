@@ -28,7 +28,7 @@ MonoDataProviderModule::MonoDataProviderModule(OutputQueue* output_queue,
                          name_id,
                          parallel_run),
       left_frame_queue_("data_provider_left_frame_queue"),
-      gnss_queue_("gnss_queue"),
+      // gnss_queue_("gnss_queue"),
       cached_left_frame_(nullptr) {}
 
 MonoDataProviderModule::InputUniquePtr
