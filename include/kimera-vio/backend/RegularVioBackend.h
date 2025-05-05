@@ -47,7 +47,11 @@ class RegularVioBackend : public VioBackend {
       const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
       const gtsam::PreintegrationType& pim,
       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
-      std::optional<gtsam::Velocity3> odometry_vel = std::nullopt) override;
+      std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
+      std::optional<std::vector<gtsam::Point3>> gnss_positions = {}) override;
+
+protected:
+    virtual void beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<gtsam::Point3>> gnss_positions = {}) {}
 
  private:
   typedef size_t Slot;

@@ -152,7 +152,9 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
     const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
     const gtsam::PreintegrationType& pim,
     std::optional<gtsam::Pose3> odometry_body_pose,
-    std::optional<gtsam::Velocity3> odometry_vel) {
+    std::optional<gtsam::Velocity3> odometry_vel,
+    std::optional<std::vector<gtsam::Point3>> gnss_positions) {
+  LOG(INFO) << "IN REGULARVIOBACKEND";
   debug_info_.resetAddedFactorsStatistics();
 
   // Features and IMU line up --> do iSAM update.
@@ -372,6 +374,19 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
         << "(not provided by typical odometry sensors)";
     addVelocityPrior(
         curr_kf_id_, *odometry_vel, odom_params_->velocityPrecision_);
+  }
+
+  if (gnss_positions && !gnss_positions->empty()) {
+    const gtsam::Symbol pose_key('x', curr_kf_id_);
+    // const auto& pose_estimate = smoother_->calculateEstimate<gtsam::Pose3>(pose_key).translation();
+    LOG(WARNING) << "GNSS XYZ: " << gnss_positions.value()[0].transpose();
+    if (odometry_body_pose) {
+      const auto residual = (odometry_body_pose->translation() - (*gnss_positions)[0]).transpose();
+      LOG(INFO) << "Pre-opt residual (using odometry): " << residual.transpose();
+    }
+    // LOG(WARNING) << "Pose XYZ: " << pose_estimate.transpose();
+    // LOG(WARNING) << "Residual: " << (pose_estimate - gnss_positions.value()[0]).transpose();
+    this->beforeOptimizeHook(timestamp_kf_nsec, gnss_positions);
   }
 
   /////////////////// OPTIMIZE /////////////////////////////////////////////////

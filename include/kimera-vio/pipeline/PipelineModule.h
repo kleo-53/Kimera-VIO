@@ -208,7 +208,7 @@ class PipelineModule : public PipelineModuleBase {
           if (!pushOutputPacket(std::move(output))) {
             LOG(WARNING) << "Module: " << name_id_ << " - Output push failed.";
           } else {
-            LOG(INFO) << "WE ARE IN SPIN 5; " << "Module: " << name_id_ << " - Pushed output."; // TOD: убрать
+            // LOG(INFO) << "WE ARE IN SPIN 5; " << "Module: " << name_id_ << " - Pushed output."; // TOD: убрать
             VLOG(2) << "Module: " << name_id_ << " - Pushed output.";
           }
         } else {
@@ -216,10 +216,16 @@ class PipelineModule : public PipelineModuleBase {
           // Notify interested parties about failure.
           notifyOnFailure();
         }
-        auto spin_duration = utils::Timer::toc(tic).count();
-        timing_stats.AddSample(spin_duration);
+        // auto spin_duration = utils::Timer::toc(tic).count();
+        auto dur = utils::Timer::toc(tic).count();
+        if (dur < 0) {
+          LOG(ERROR) << "Negative timing: " << dur << "at module " << name_id_;
+        } else {
+          timing_stats.AddSample(dur);
+        }
+        // timing_stats.AddSample(spin_duration);
       } else {
-        LOG(INFO) << "Module: " << name_id_ << " - No Input received.";  //TOD: убрать
+        // LOG(INFO) << "Module: " << name_id_ << " - No Input received.";  //TOD: убрать
         // TODO(nathan) switch to VLOG_IS_ON(1) when we fix how spinning works
         LOG_IF_EVERY_N(WARNING, VLOG_IS_ON(10), 50)
             << "Module: " << name_id_ << " - No Input received.";

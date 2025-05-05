@@ -274,6 +274,11 @@
      gnss_measurements->resize(Eigen::NoChange, 0);
      return query_result;
    }
+   if (gnss_measurements_tmp.cols() == 0) {
+    gnss_timestamps->resize(Eigen::NoChange, 0);
+    gnss_measurements->resize(Eigen::NoChange, 0);
+    return QueryResult::kTooFewMeasurementsAvailable;
+  }
  
    // Interpolate lower border.
    GnssPose interpolated_lower_border;

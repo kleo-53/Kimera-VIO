@@ -150,12 +150,14 @@ BackendOutput::UniquePtr VioBackend::spinOnce(const BackendInput& input) {
   switch (backend_state) {
     case BackendState::Bootstrap: {
       initializeBackend(input);
+      LOG(INFO) << "INITIALIZED";
       backend_status = true;
       break;
     }
     case BackendState::Nominal: {
       // Process data with VIO.
       backend_status = addVisualInertialStateAndOptimize(input);
+      LOG(INFO) << "SPIN BACKEND";
       break;
     }
     default: {
@@ -284,6 +286,7 @@ bool VioBackend::initStateAndSetPriors(
       curr_kf_id_, W_Pose_B_lkf_from_state_, W_Vel_B_lkf_, imu_bias_lkf_);
 
   VLOG(2) << "Start optimize with initial state and priors!";
+  LOG(INFO) << "INIT VIOBACKEND";
   return optimize(vio_nav_state_initial_seed.timestamp_,
                   curr_kf_id_,
                   backend_params_.numOptimize_);
@@ -298,7 +301,8 @@ bool VioBackend::addVisualInertialStateAndOptimize(
     const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
     const gtsam::PreintegrationType& pim,
     std::optional<gtsam::Pose3> odometry_body_pose,
-    std::optional<gtsam::Velocity3> odometry_vel) {
+    std::optional<gtsam::Velocity3> odometry_vel,
+    std::optional<std::vector<gtsam::Point3>> gnss_positions) {
   debug_info_.resetAddedFactorsStatistics();
 
   // Features and IMU line up --> do iSAM update
@@ -436,9 +440,11 @@ bool VioBackend::addVisualInertialStateAndOptimize(const BackendInput& input) {
       *input.status_stereo_measurements_kf_,  // Vision data.
       *input.pim_,                            // Imu preintegrated data.
       input.body_lkf_OdomPose_body_kf_,
-      input.body_kf_world_OdomVel_body_kf_);
+      input.body_kf_world_OdomVel_body_kf_,
+      input.gnss_positions_);
   // Bookkeeping
   timestamp_lkf_ = input.timestamp_;
+  LOG(INFO) << "IN VIOBACKEND";
   return is_smoother_ok;
 }
 
@@ -1045,6 +1051,7 @@ bool VioBackend::optimize(
   const auto& total_start_time = utils::Timer::tic();
   // Store start time to calculate per module total time.
   auto start_time = total_start_time;
+  // LOG(WARNING) << "START TIC, start time:" << start_time;
   // Reset all timing infupdateSmoother
   /////////////////////// BOOKKEEPING ////////////////////////////////////
   size_t new_smart_factors_size = new_smart_factors_.size();
@@ -1125,6 +1132,7 @@ bool VioBackend::optimize(
     debug_info_.factorsAndSlotsTime_ =
         utils::Timer::toc<std::chrono::seconds>(start_time).count();
     start_time = utils::Timer::tic();
+    // LOG(WARNING) << "TIC UPD 1, start time " << start_time;
   }
 
   if (VLOG_IS_ON(10)) {
@@ -1170,6 +1178,7 @@ bool VioBackend::optimize(
     debug_info_.updateTime_ =
         utils::Timer::toc<std::chrono::seconds>(start_time).count();
     start_time = utils::Timer::tic();
+    // LOG(WARNING) << "TIC UPD 2, start time " << start_time;
   }
 
   // Compute iSAM update.
@@ -1187,6 +1196,7 @@ bool VioBackend::optimize(
     debug_info_.updateTime_ =
         utils::Timer::toc<std::chrono::seconds>(start_time).count();
     start_time = utils::Timer::tic();
+    // LOG(WARNING) << "TIC UPD 3, start time " << start_time;
   }
 
   /////////////////////////// BOOKKEEPING //////////////////////////////////////
@@ -1214,6 +1224,7 @@ bool VioBackend::optimize(
       debug_info_.updateSlotTime_ =
           utils::Timer::toc<std::chrono::seconds>(start_time).count();
       start_time = utils::Timer::tic();
+      // LOG(WARNING) << "TIC UPD 4, start time " << start_time;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1229,6 +1240,7 @@ bool VioBackend::optimize(
       debug_info_.extraIterationsTime_ =
           utils::Timer::toc<std::chrono::seconds>(start_time).count();
       start_time = utils::Timer::tic();
+      // LOG(WARNING) << "TIC UPD 5, start time " << start_time;
     }
 
     // Update states we need for next iteration, if smoother is ok.
@@ -1242,6 +1254,7 @@ bool VioBackend::optimize(
 
       // Debug.
       postDebug(total_start_time, start_time);
+      // LOG(WARNING) << "Total start time: " << total_start_time << " Start time " << start_time;
     } else {
       LOG(ERROR) << "Smoother is not ok! Not updating Backend state.";
     }
@@ -2147,8 +2160,8 @@ void VioBackend::computeSparsityStatistics() {
 
 // Debugging post optimization and estimate calculation.
 void VioBackend::postDebug(
-    const std::chrono::high_resolution_clock::time_point& total_start_time,
-    const std::chrono::high_resolution_clock::time_point& start_time) {
+    const std::chrono::steady_clock::time_point& total_start_time,
+    const std::chrono::steady_clock::time_point& start_time) {
   if (log_output_) {
     computeSparsityStatistics();
     computeSmartFactorStatistics();
@@ -2172,7 +2185,8 @@ void VioBackend::postDebug(
     // Sanity check timings
     const auto& end_time =
         utils::Timer::toc<std::chrono::seconds>(total_start_time).count();
-    const auto& end_time_from_sum = debug_info_.sumAllTimes();
+    LOG(WARNING) << "DURATION TIME::::: " << end_time;
+        const auto& end_time_from_sum = debug_info_.sumAllTimes();
     LOG_IF(ERROR, end_time != end_time_from_sum)
         << "Optimize: time measurement mismatch."
            "The sum of the parts is not equal to the total.";

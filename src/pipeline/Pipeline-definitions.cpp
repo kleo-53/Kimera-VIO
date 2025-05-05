@@ -26,6 +26,7 @@ DEFINE_bool(use_external_odometry, false, "Use an external odometry input.");
 #include "kimera-vio/backend/RegularVioBackendParams.h"
 #include "kimera-vio/backend/VioBackend-definitions.h"
 #include "kimera-vio/backend/VioBackendParams.h"
+#include "kimera-vio/backend/GnssVioBackendParams.h"
 #include "kimera-vio/frontend/Camera.h"
 #include "kimera-vio/frontend/CameraParams.h"
 #include "kimera-vio/frontend/VisionImuFrontend-definitions.h"
@@ -136,6 +137,10 @@ bool VioParams::parseYAML(const std::string&) {
     }
     case BackendType::kStructuralRegularities: {
       backend_params_ = std::make_shared<RegularVioBackendParams>();
+      break;
+    }
+    case BackendType::kGnssStructuralRegularities: {
+      backend_params_ = std::make_shared<GnssVioBackendParams>();
       break;
     }
     default: {

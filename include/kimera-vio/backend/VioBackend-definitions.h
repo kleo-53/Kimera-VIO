@@ -237,14 +237,35 @@ struct BackendInput : public PipelinePayload {
       //! Raw imu msgs for Backend init only
       const ImuAccGyrS& imu_acc_gyrs,
       std::optional<gtsam::Pose3> body_lkf_OdomPose_body_kf = std::nullopt,
-      std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf =
-          std::nullopt)
+      std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf = std::nullopt,
+      std::optional<std::vector<gtsam::Point3>> gnss_positions = std::nullopt)
       : PipelinePayload(timestamp_kf_nsec),
         status_stereo_measurements_kf_(status_stereo_measurements_kf),
         pim_(pim),
         imu_acc_gyrs_(imu_acc_gyrs),
         body_lkf_OdomPose_body_kf_(body_lkf_OdomPose_body_kf),
-        body_kf_world_OdomVel_body_kf_(body_kf_world_OdomVel_body_kf) {}
+        body_kf_world_OdomVel_body_kf_(body_kf_world_OdomVel_body_kf),
+        gnss_positions_(gnss_positions) {
+          if (gnss_positions && !gnss_positions->empty()) {
+            LOG(WARNING) << "GNSS IN INPUT" << gnss_positions.value()[0].transpose();
+          }
+        }
+
+  // BackendInput(
+  //         const Timestamp& timestamp_kf_nsec,
+  //         const StatusStereoMeasurementsPtr& status_stereo_measurements_kf,
+  //         const ImuFrontend::PimPtr& pim,
+  //         const ImuAccGyrS& imu_acc_gyrs,
+  //         std::optional<gtsam::Pose3> body_lkf_OdomPose_body_kf = std::nullopt,
+  //         std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf = std::nullopt,
+  //         const std::vector<gtsam::Point3>& gnss_positions = {})
+  //         : PipelinePayload(timestamp_kf_nsec),
+  //           status_stereo_measurements_kf_(status_stereo_measurements_kf),
+  //           pim_(pim),
+  //           imu_acc_gyrs_(imu_acc_gyrs),
+  //           body_lkf_OdomPose_body_kf_(body_lkf_OdomPose_body_kf),
+  //           body_kf_world_OdomVel_body_kf_(body_kf_world_OdomVel_body_kf),
+  //           gnss_positions_(gnss_positions) {}
 
  public:
   const StatusStereoMeasurementsPtr status_stereo_measurements_kf_;
@@ -255,6 +276,9 @@ struct BackendInput : public PipelinePayload {
   // velocity of the current keyframe body w.r.t. the world frame in the body
   // frame
   std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf_;
+  
+  std::optional<std::vector<gtsam::Point3>> gnss_positions_;
+  // std::vector<gtsam::Point3> gnss_positions_;
 
  public:
   void print() const {
@@ -346,7 +370,8 @@ struct BackendOutput : public PipelinePayload {
  *  - kStereoImu: vanilla Backend type using Stereo and IMU
  *  - kStructuralRegularities: the `regular VIO` Backend, using structural
  * regularities derived from the 3D Mesh.
+ * - kGnssStructuralRegularities: based on `regular vio`, using GNSS factor
  */
-enum class BackendType { kStereoImu = 0, kStructuralRegularities = 1 };
+enum class BackendType { kStereoImu = 0, kStructuralRegularities = 1, kGnssStructuralRegularities = 2 };
 
 }  // namespace VIO

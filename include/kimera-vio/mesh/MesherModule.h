@@ -38,6 +38,7 @@ class MesherModule : public MIMOPipelineModule<MesherInput, MesherOutput> {
     frontend_payload_queue_.push(frontend_payload);
   }
   inline void fillBackendQueue(const MesherBackendInput& backend_payload) {
+    LOG(INFO) << "[Mesher] Got BackendOutput with kf_id = " << backend_payload->cur_kf_id_;
     backend_payload_queue_.push(backend_payload);
   }
 

@@ -34,6 +34,7 @@
  #include "kimera-vio/utils/Statistics.h"
  #include "kimera-vio/utils/ThreadsafeQueue.h"
  #include "kimera-vio/utils/Timer.h"
+ #include "kimera-vio/frontend/GnssStereoVisionImuFrontend-definitions.h"
  
  namespace VIO {
  
@@ -112,13 +113,13 @@
    /* ------------------------------------------------------------------------ */
    // Used when initializing the Frontend, operates on Stereo Frontend-specific
    // structures.
-   StereoFrontendOutput::UniquePtr bootstrapSpinStereo(
+   GnssStereoFrontendOutput::UniquePtr bootstrapSpinStereo(
        GnssStereoFrontendInputPayload::UniquePtr&& input);
  
    /* ------------------------------------------------------------------------ */
    // Used when in nominal mode after init, operates on Stereo Frontend-specific
    // structures.
-   StereoFrontendOutput::UniquePtr nominalSpinStereo(
+   GnssStereoFrontendOutput::UniquePtr nominalSpinStereo(
        GnssStereoFrontendInputPayload::UniquePtr&& input);
  
    /* ------------------------------------------------------------------------ */
@@ -174,6 +175,8 @@
    // This is not const as for debugging we want to redirect the image save path
    // where we like
    std::string output_images_path_;
+
+   std::optional<std::vector<gtsam::Point3>> gnss_positions_;
  };
  
  }  // namespace VIO

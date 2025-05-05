@@ -37,13 +37,14 @@ GnssStereoImuSyncPacket::GnssStereoImuSyncPacket(
       stereo_frame_(stereo_frame),
       gnss_stamps_(gnss_stamps),
       gnss_data_(gnss_data),
-        reinit_packet_(reinit_packet) {
+      reinit_packet_(reinit_packet) {
   // The timestamp of the last IMU measurement must correspond to the timestamp
   // of the stereo frame. In case there is no IMU measurement with exactly
   // the same timestamp as the stereo frame, the user should interpolate
   // IMU measurements to get a value at the time of the stereo_frame.
   CHECK_GT(imu_stamps_.cols(), 0);
   CHECK_EQ(stereo_frame_.timestamp_, imu_stamps_(imu_stamps_.cols() - 1));
+  // LOG(WARNING) << "GNSS POSES SIZE IN SYNCPACKET" << gnss_data.size();
 }
 
 // GnssStereoImuSyncPacket::GnssStereoImuSyncPacket(

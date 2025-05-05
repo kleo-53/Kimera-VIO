@@ -8,7 +8,8 @@ frontend_type: 3
 # Type of vioBackend to use:
 # 0: VioBackend
 # 1: RegularVioBackend
-backend_type: 1
+# 2: GnssVioBackend
+backend_type: 2
 
 # Type of Displayer to use:
 # 0: OpenCV

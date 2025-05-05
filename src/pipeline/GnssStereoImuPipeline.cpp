@@ -116,7 +116,7 @@
    vio_frontend_module_->registerOutputCallback(
        [&backend_input_queue](const FrontendOutputPacketBase::Ptr& output) {
          auto converted_output =
-             std::dynamic_pointer_cast<StereoFrontendOutput>(output); // TOD: и сюда gnss
+             std::dynamic_pointer_cast<GnssStereoFrontendOutput>(output); // TOD: и сюда gnss
          CHECK(converted_output);
  
          if (converted_output && converted_output->is_keyframe_) {
@@ -127,7 +127,8 @@
                converted_output->pim_,
                converted_output->imu_acc_gyrs_,
                converted_output->body_lkf_OdomPose_body_kf_,
-               converted_output->body_kf_world_OdomVel_body_kf_));
+               converted_output->body_kf_world_OdomVel_body_kf_,
+               converted_output->gnss_positions_));
          } else {
            VLOG(5)
                << "Frontend did not output a keyframe, skipping Backend input.";
@@ -161,16 +162,23 @@
            params.odom_params_));
    vio_backend_module_->registerOnFailureCallback(
        std::bind(&GnssStereoImuPipeline::signalBackendFailure, this));
-   vio_backend_module_->registerImuBiasUpdateCallback(
-       std::bind(&VisionImuFrontendModule::updateImuBias,
-                 // Send a cref: constant reference bcs updateImuBias is const
-                 std::cref(*CHECK_NOTNULL(vio_frontend_module_.get())),
-                 std::placeholders::_1));
-   vio_backend_module_->registerMapUpdateCallback(
-       std::bind(&VisionImuFrontendModule::updateMap,
-                 std::cref(*CHECK_NOTNULL(vio_frontend_module_.get())),
-                 std::placeholders::_1));
- 
+//    vio_backend_module_->registerImuBiasUpdateCallback(
+//        std::bind(&GnssVisionImuFrontendModule::updateImuBias,
+//                  std::cref(*CHECK_NOTNULL(vio_frontend_module_.get())),
+//                  std::placeholders::_1));
+//    vio_backend_module_->registerMapUpdateCallback(
+//        std::bind(&GnssVisionImuFrontendModule::updateMap,
+//                  std::cref(*CHECK_NOTNULL(vio_frontend_module_.get())),
+//                  std::placeholders::_1));
+vio_backend_module_->registerImuBiasUpdateCallback(
+    [frontend = std::cref(*CHECK_NOTNULL(vio_frontend_module_.get()))](const gtsam::imuBias::ConstantBias& bias) {
+        frontend.get().updateImuBias(bias);
+    });
+
+vio_backend_module_->registerMapUpdateCallback(
+    [frontend = std::cref(*CHECK_NOTNULL(vio_frontend_module_.get()))](const std::unordered_map<long int, Eigen::Vector3d>& map) {
+        frontend.get().updateMap(map);
+    });
    if (static_cast<VisualizationType>(FLAGS_viz_type) ==
        VisualizationType::kMesh2dTo3dSparse) {
      mesher_module_ = std::make_unique<MesherModule>(
@@ -189,7 +197,7 @@
      vio_frontend_module_->registerOutputCallback(
          [&mesher_module](const FrontendOutputPacketBase::Ptr& output) {
            auto converted_output =
-               std::dynamic_pointer_cast<StereoFrontendOutput>(output);
+               std::dynamic_pointer_cast<GnssStereoFrontendOutput>(output);
            CHECK(converted_output);
            CHECK_NOTNULL(mesher_module.get())
                ->fillFrontendQueue(converted_output);
@@ -245,7 +253,7 @@
      vio_frontend_module_->registerOutputCallback(
          [&visualizer_module](const FrontendOutputPacketBase::Ptr& output) {
            auto converted_output =
-               std::dynamic_pointer_cast<StereoFrontendOutput>(output);
+               std::dynamic_pointer_cast<GnssStereoFrontendOutput>(output);
            CHECK(converted_output);
            CHECK_NOTNULL(visualizer_module.get())
                ->fillFrontendQueue(converted_output);

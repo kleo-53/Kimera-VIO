@@ -28,26 +28,53 @@ struct GnssStereoFrontendOutput : public VIO::StereoFrontendOutput {
   KIMERA_DELETE_COPY_CONSTRUCTORS(GnssStereoFrontendOutput);
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   
-  GnssStereoFrontendOutput(const VIO::StereoFrontendOutput::UniquePtr& output,
-    const Gnss& nav_data)
-    : StereoFrontendOutput(
-      output->is_keyframe_,
-      output->status_stereo_measurements_,
-      output->b_Pose_camL_rect_,
-      output->b_Pose_camR_rect_,
-      output->stereo_frame_lkf_,
-      output->pim_,
-      output->imu_acc_gyrs_,
-      output->feature_tracks_,
-      output->debug_tracker_info_),
-      // output->lkf_body_Pose_kf_body_,
-      // output->debug_tracker_info_),
-      gnss_nav_data_(nav_data) {}
+  // GnssStereoFrontendOutput(const VIO::StereoFrontendOutput::UniquePtr& output,
+    // const Gnss& gnss_positions)
+    GnssStereoFrontendOutput(
+      const bool is_keyframe,
+      const StatusStereoMeasurementsPtr& status_stereo_measurements,
+      const gtsam::Pose3& b_Pose_camL_rect,
+      const gtsam::Pose3& b_Pose_camR_rect,
+      const StereoFrame& stereo_frame_lkf,
+      const ImuFrontend::PimPtr& pim,
+      const ImuAccGyrS& imu_acc_gyrs,
+      const cv::Mat& feature_tracks,
+      const DebugTrackerInfo& debug_tracker_info,
+      std::optional<gtsam::Pose3> lkf_body_Pose_kf_body = std::nullopt,
+      std::optional<gtsam::Velocity3> body_world_Vel_body = std::nullopt,
+      std::optional<std::vector<gtsam::Point3>> gnss_positions = {})
+      : StereoFrontendOutput(
+        is_keyframe,
+        status_stereo_measurements,
+        b_Pose_camL_rect,
+        b_Pose_camR_rect,
+        stereo_frame_lkf,
+        pim,
+        imu_acc_gyrs,
+        feature_tracks,
+        debug_tracker_info),
+      gnss_positions_(std::move(gnss_positions)) {
+        // LOG(WARNING) << "GNSS IN VIOOUTPUT " << gnss_positions_.value()[0].transpose();
+      }
+    // : StereoFrontendOutput(
+    //   output->is_keyframe_,
+    //   output->status_stereo_measurements_,
+    //   output->b_Pose_camL_rect_,
+    //   output->b_Pose_camR_rect_,
+    //   output->stereo_frame_lkf_,
+    //   output->pim_,
+    //   output->imu_acc_gyrs_,
+    //   output->feature_tracks_,
+    //   output->debug_tracker_info_),
+    //   // output->lkf_body_Pose_kf_body_,
+    //   // output->debug_tracker_info_),
+    //   gnss_positions_(gnss_positions) {}
 
   virtual ~GnssStereoFrontendOutput() = default;
 
  public:
-  const Gnss gnss_nav_data_;
+  // const Gnss gnss_nav_data_;
+  std::optional<std::vector<gtsam::Point3>> gnss_positions_;
 };
 
 }  // namespace VIO

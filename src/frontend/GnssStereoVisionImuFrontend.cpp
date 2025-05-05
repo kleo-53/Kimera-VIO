@@ -50,7 +50,8 @@
        feature_detector_(nullptr),
        stereo_camera_(stereo_camera),
        stereo_matcher_(stereo_camera, frontend_params.stereo_matching_params_),
-       output_images_path_("./outputImages/") {
+       output_images_path_("./outputImages/"),
+       gnss_positions_(std::make_optional(std::vector<gtsam::Point3>{gnss_params.b_pose_gnss.translation()})) {
    CHECK(stereo_camera_);
  
    feature_detector_ = std::make_unique<FeatureDetector>(
@@ -61,13 +62,16 @@
                                         display_queue);
  
    if (VLOG_IS_ON(1)) tracker_->tracker_params_.print();
+   LOG(WARNING) << "GNSSS IN FRONT:  " << gnss_params.b_pose_gnss.translation();
+   LOG(WARNING) << "GNSS TO BACKEND: " << gnss_positions_.value()[0].transpose();
+  //  gnss_positions_ = {gnss_params.b_pose_gnss;};
  }
  
  GnssStereoVisionImuFrontend::~GnssStereoVisionImuFrontend() {
    LOG(INFO) << "GnssStereoVisionImuFrontend destructor called.";
  }
  
- StereoFrontendOutput::UniquePtr GnssStereoVisionImuFrontend::bootstrapSpinStereo(
+ GnssStereoFrontendOutput::UniquePtr GnssStereoVisionImuFrontend::bootstrapSpinStereo(
      GnssStereoFrontendInputPayload::UniquePtr&& input) {
    // Initialize members of the Frontend
    processFirstStereoFrame(input->getStereoFrame());
@@ -90,7 +94,18 @@
      return nullptr;  // skip adding a frame to all downstream modules
    }
  
-   return std::make_unique<StereoFrontendOutput>(
+   const GnssPoseS& gnss_data_matrix = input->getGnssData();
+
+  std::vector<gtsam::Point3> gnss_positions_vec;
+  gnss_positions_vec.reserve(gnss_data_matrix.cols());
+  for (int i = 0; i < gnss_data_matrix.cols(); ++i) {
+    gnss_positions_vec.emplace_back(gnss_data_matrix.col(i));
+  }
+
+  auto gnss_positions_optional = std::make_optional<std::vector<gtsam::Point3>>(std::move(gnss_positions_vec));
+
+   // TOD: GNSS OUTPUT??
+   return std::make_unique<GnssStereoFrontendOutput>(
        stereoFrame_lkf_->isKeyframe(),
        nullptr,
        stereo_camera_->getBodyPoseLeftCamRect(),
@@ -99,10 +114,14 @@
        nullptr,
        input->getImuAccGyrs(),
        cv::Mat(),
-       getTrackerInfo());
+       getTrackerInfo(),
+       std::nullopt,  // lkf_body_Pose_kf_body
+       std::nullopt,  // velocity
+      //  input->getGnssData());
+      gnss_positions_optional);
  }
  
- StereoFrontendOutput::UniquePtr GnssStereoVisionImuFrontend::nominalSpinStereo(
+ GnssStereoFrontendOutput::UniquePtr GnssStereoVisionImuFrontend::nominalSpinStereo(
      GnssStereoFrontendInputPayload::UniquePtr&& input) {
    // For timing
    utils::StatsCollector timing_stats_frame_rate("VioFrontend Frame Rate [ms]");
@@ -173,6 +192,17 @@
    if (VLOG_IS_ON(5))
      GnssStereoVisionImuFrontend::printStatusStereoMeasurements(
          *status_stereo_measurements);
+
+         const GnssPoseS& gnss_data_matrix = input->getGnssData();
+
+         std::vector<gtsam::Point3> gnss_positions_vec;
+         gnss_positions_vec.reserve(gnss_data_matrix.cols());
+         for (int i = 0; i < gnss_data_matrix.cols(); ++i) {
+           gnss_positions_vec.emplace_back(gnss_data_matrix.col(i));
+         }
+         
+         auto gnss_positions_optional = std::make_optional<std::vector<gtsam::Point3>>(std::move(gnss_positions_vec));
+
  
    if (stereoFrame_km1_->isKeyframe()) {
      // We got a keyframe!
@@ -209,7 +239,7 @@
      // Return the output of the Frontend for the others.
      // We have a keyframe, so We fill stereo_frame_lkf_ with the newest keyframe
      VLOG(2) << "Frontend output is a keyframe: pushing to output callbacks.";
-     return std::make_unique<StereoFrontendOutput>(
+     return std::make_unique<GnssStereoFrontendOutput>(
          frontend_state_ == FrontendState::Nominal,
          status_stereo_measurements,
          stereo_camera_->getBodyPoseLeftCamRect(),
@@ -220,7 +250,9 @@
          feature_tracks,
          getTrackerInfo(),
          getExternalOdometryRelativeBodyPose(input.get()),
-         getExternalOdometryWorldVelocity(input.get()));
+         getExternalOdometryWorldVelocity(input.get()),
+        //  input->getGnssData());
+        gnss_positions_optional);
    } else {
      // Record frame rate timing
      timing_stats_frame_rate.AddSample(utils::Timer::toc(start_time).count());
@@ -229,7 +261,7 @@
      // We don't have a keyframe, so instead we forward the newest frame in this
      // packet for use in the temporal calibration (if enabled)
      VLOG(2) << "Frontend output is not a keyframe. Skipping output queue push.";
-     return std::make_unique<StereoFrontendOutput>(
+     return std::make_unique<GnssStereoFrontendOutput>(
          false,
          status_stereo_measurements,
          stereo_camera_->getBodyPoseLeftCamRect(),
@@ -238,7 +270,11 @@
          pim,
          input->getImuAccGyrs(),
          feature_tracks,
-         getTrackerInfo());
+         getTrackerInfo(),
+         std::nullopt,  // lkf_body_Pose_kf_body
+         std::nullopt,  // velocity
+        //  input->getGnssData());
+        gnss_positions_optional);
    }
  }
  

@@ -64,7 +64,7 @@ class Pipeline {
   inline void fillLeftFrameQueue(Frame::UniquePtr left_frame) {
     CHECK(data_provider_module_);
     CHECK(left_frame);
-    LOG(INFO) << ">>> Got LEFT frame: " << left_frame->timestamp_;
+    // LOG(INFO) << ">>> Got LEFT frame: " << left_frame->timestamp_;
     data_provider_module_->fillLeftFrameQueue(std::move(left_frame));
   }
 

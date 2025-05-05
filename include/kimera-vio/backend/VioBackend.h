@@ -220,7 +220,8 @@ class VioBackend {
       const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
       const gtsam::PreintegrationType& pim,
       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
-      std::optional<gtsam::Velocity3> odometry_vel = std::nullopt);
+      std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
+      std::optional<std::vector<gtsam::Point3>> gnss_positions = {});
 
   // Uses landmark table to add factors in graph.
   void addLandmarksToGraph(const LandmarkIds& landmarks_kf);
@@ -421,8 +422,8 @@ class VioBackend {
 
   // Debugging post optimization and estimate calculation.
   void postDebug(
-      const std::chrono::high_resolution_clock::time_point& total_start_time,
-      const std::chrono::high_resolution_clock::time_point& start_time);
+      const std::chrono::steady_clock::time_point& total_start_time,
+      const std::chrono::steady_clock::time_point& start_time);
 
   // Reset state of debug info.
   void resetDebugInfo(DebugVioInfo* debug_info);

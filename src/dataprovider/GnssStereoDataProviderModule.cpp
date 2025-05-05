@@ -43,7 +43,7 @@
       LOG(WARNING) << "RETURN NULL: mono_imu_sync_packet is nullptr!"; // TOD: убрать
       return nullptr;
     }
-    LOG(INFO) << "MonoImuSyncPacket created! Timestamp: " << mono_imu_sync_packet->timestamp_;// TOD: убрать
+    // LOG(INFO) << "MonoImuSyncPacket created! Timestamp: " << mono_imu_sync_packet->timestamp_;// TOD: убрать
  
    const Timestamp& timestamp = mono_imu_sync_packet->timestamp_;
    const FrameId& left_frame_id = mono_imu_sync_packet->frame_->id_;
@@ -74,6 +74,11 @@
     case FrameAction::Drop:
       // return nullptr;
       break;
+  }
+
+  if (gnss_meas.poses_.cols() == 0 || gnss_meas.timestamps_.cols() == 0) {
+    gnss_meas.timestamps_.resize(Eigen::NoChange, 0);
+    gnss_meas.poses_.resize(Eigen::NoChange, 0);
   }
 
 

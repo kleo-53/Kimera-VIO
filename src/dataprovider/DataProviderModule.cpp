@@ -248,6 +248,14 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
           // &imu_meas->acc_gyr_);
   // logQueryResult(timestamp, query_result);
   LOG(INFO) << "Query GNSS at " << gnss_timestamp_curr_frame;
+  // LOG(INFO) << "GNSS interpolation result: " << static_cast<int>(query_result);
+  // LOG(INFO) << "GNSS timestamps size: " << gnss_meas->timestamps_.cols();
+  // LOG(INFO) << "GNSS poses size: " << gnss_meas->poses_.cols();
+
+  // for (int i = 0; i < gnss_meas->timestamps_.cols(); ++i) {
+  //   LOG(INFO) << "GNSS @ " << gnss_meas->timestamps_(0, i) << ": "
+  //             << gnss_meas->poses_.col(i).transpose();
+  // }
   // ThreadsafeGnssBuffer::QueryResult query_result = 
   //   gnss_data_.gnss_buffer_.getNearest(
   //     gnss_timestamp_curr_frame
