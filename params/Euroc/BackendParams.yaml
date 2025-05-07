@@ -93,8 +93,8 @@ pose_guess_source: 0
 mono_translation_scale_factor: 0.1
 
 # GNSS backend params
-initialGnssPoseSigma: 3.0
-gnssNoiseSigma: 3.0
+initialGnssPoseSigma: 0.1
+gnssNoiseSigma: 0.1
 gnssNormType: 0
-gnssNormParam: 0.0
+gnssNormParam: 4.6851
 gnssBackendModality: 0

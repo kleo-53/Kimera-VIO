@@ -140,7 +140,7 @@ class VioBackend {
   bool initStateAndSetPriors(
       const VioNavStateTimestamped& vio_nav_state_initial_seed);
 
-  void initializeBackend(const BackendInput& input) {
+  virtual void initializeBackend(const BackendInput& input) {
     CHECK(backend_state_ == BackendState::Bootstrap);
     switch (backend_params_.autoInitialize_) {
       case 0: {
@@ -294,11 +294,12 @@ class VioBackend {
 
   bool deleteLmkFromFeatureTracks(const LandmarkId& lmk_id);
 
- private:
-  bool addVisualInertialStateAndOptimize(const BackendInput& input);
-
+protected:
   // Add initial prior factors.
-  void addInitialPriorFactors(const FrameId& frame_id);
+  virtual void addInitialPriorFactors(const FrameId& frame_id);
+  
+  private:
+ bool addVisualInertialStateAndOptimize(const BackendInput& input);
 
   void addConstantVelocityFactor(const FrameId& from_id, const FrameId& to_id);
 

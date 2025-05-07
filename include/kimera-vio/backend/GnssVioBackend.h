@@ -38,26 +38,20 @@ class GnssVioBackend : public RegularVioBackend {
 
   virtual ~GnssVioBackend() = default;
 
-  void beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<gtsam::Point3>> gnss_positions = {}) override;
-//   bool addVisualInertialStateAndOptimize(
-//       const Timestamp& timestamp_kf_nsec,
-//       const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
-//       const gtsam::PreintegrationType& pim,
-//       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
-//       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
-//       std::optional<gtsam::Point3> gnss_position = std::nullopt);  // GNSS
 
-  // bool addVisualInertialStateAndOptimize(
-  //       const Timestamp& timestamp_kf_nsec,
-  //       const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
-  //       const gtsam::PreintegrationType& pim,
-  //       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
-  //       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
-  //       std::optional<std::vector<gtsam::Point3>> gnss_positions = {});
-    
- private:
+  public:
+    // bool initializeFromIMU(const BackendInput& input) override;
+    void initializeBackend(const BackendInput& input) override;
+
+  protected:
+    void addInitialPriorFactors(const FrameId& frame_id) override;
+
+  void beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<gtsam::Point3>> gnss_positions = {}) override;
+  private:
   const GnssVioBackendParams gnss_vio_params_;
   gtsam::SharedNoiseModel gnss_noise_;
+  bool has_initial_gnss_ = false;
+  gtsam::Pose3 initial_gnss_pose_;
   /* ------------------------------------------------------------------------ */
   // Output a noise model with a selected norm type:
   // norm_type = 0: l-2.
@@ -77,6 +71,22 @@ class GnssVioBackend : public RegularVioBackend {
 }  // namespace VIO
 
 
+//   bool addVisualInertialStateAndOptimize(
+//       const Timestamp& timestamp_kf_nsec,
+//       const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
+//       const gtsam::PreintegrationType& pim,
+//       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
+//       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
+//       std::optional<gtsam::Point3> gnss_position = std::nullopt);  // GNSS
+
+  // bool addVisualInertialStateAndOptimize(
+  //       const Timestamp& timestamp_kf_nsec,
+  //       const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
+  //       const gtsam::PreintegrationType& pim,
+  //       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
+  //       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
+  //       std::optional<std::vector<gtsam::Point3>> gnss_positions = {});
+    
 // /* ----------------------------------------------------------------------------
 //  * Copyright 2017, Massachusetts Institute of Technology,
 //  * Cambridge, MA 02139

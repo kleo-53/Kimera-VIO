@@ -18,8 +18,9 @@
  * @author Antoni Rosinol
  */
 
- #include "kimera-vio/backend/GnssVioBackend.h"
- #include "kimera-vio/factors/GnssFactor.h"
+#include "kimera-vio/backend/GnssVioBackend.h"
+#include "kimera-vio/factors/GnssFactor.h"
+#include "kimera-vio/backend/VioBackend.h"
 
  namespace VIO {
  
@@ -41,11 +42,11 @@
        gnss_vio_params_(GnssVioBackendParams::safeCast(backend_params)) {
         LOG(INFO) << "Using Gnss VIO Backend.\n";
         auto base_model = gtsam::noiseModel::Isotropic::Sigma(
-          3, gnss_vio_params_.gnssNoiseSigma_);
-        selectNormType(&gnss_noise_,
-                        base_model,
-                        gnss_vio_params_.gnssNormType_,
-                        gnss_vio_params_.gnssNormParam_);
+            3, gnss_vio_params_.gnssNoiseSigma_);
+          selectNormType(&gnss_noise_,
+                          base_model,
+                          gnss_vio_params_.gnssNormType_,
+                          gnss_vio_params_.gnssNormParam_);
        }
  
 //  bool GnssVioBackend::addVisualInertialStateAndOptimize(
@@ -224,17 +225,112 @@
 //     // LOG(INFO) << "Factors in graph AFTER : " << smoother_->getFactors().size();
 //     return true;
 // }
+
+// BackendOutput::UniquePtr GnssVioBackend::spinOnce(const BackendInput& input) {
+//   if (!VioBackend::isInitialized()) {
+//     LOG(INFO) << "GNSSVIO spinOnce initializing backend";
+//     initializeFromIMU(input);
+//     return nullptr;
+//   }
+
+//   return VioBackend::spinOnce(input);
+// }
+
+void GnssVioBackend::initializeBackend(const BackendInput& input) {
+  CHECK(backend_state_ == BackendState::Bootstrap);
+  LOG(INFO) << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaa";
+  if (input.gnss_positions_ && !input.gnss_positions_->empty()) {
+    has_initial_gnss_ = true;
+    // const gtsam::Point3& gnss_pos = it->second;
+    const gtsam::Point3& gnss_pos = input.gnss_positions_->back();
+    initial_gnss_pose_ = gtsam::Pose3(gtsam::Rot3::Yaw(0.0), gnss_pos);
+    LOG(INFO) << "Got initial GNSS pos:" << gnss_pos;
+  } else {
+    LOG(WARNING) << "NO INIT GNSS POSE";
+    has_initial_gnss_ = false;
+  }
+  switch (backend_params_.autoInitialize_) {
+    case 0: {
+      VioBackend::initializeFromGt(input);
+      break;
+    }
+    case 1: {
+      VioBackend::initializeFromIMU(input);
+      break;
+    }
+    default: {
+      LOG(FATAL) << "Wrong initialization mode.";
+    }
+  }
+  // Signal that the Backend has been initialized.
+  backend_state_ = BackendState::Nominal;
+}
+
+// bool GnssVioBackend::initializeFromIMU(const BackendInput& input) {
+//   LOG(INFO) << "------------------- Initialize Pipeline: timestamp = "
+//             << input.timestamp_ << "--------------------";
+//   // auto it = input.gnss_positions_.find(curr_kf_id_);
+//   // if (it != input.gnss_positions_.end()) {
+//     if (!input.gnss_positions_ || input.gnss_positions_->empty()) {
+//       LOG(WARNING) << "No GNSS yet, delaying backend init.";
+//       return false;  // Отказ от инициализации
+//     }
+//   if (input.gnss_positions_ && !input.gnss_positions_->empty()) {
+//     has_initial_gnss_ = true;
+//     // const gtsam::Point3& gnss_pos = it->second;
+//     const gtsam::Point3& gnss_pos = input.gnss_positions_->back();
+//     initial_gnss_pose_ = gtsam::Pose3(gtsam::Rot3::Yaw(0.0), gnss_pos);
+//     LOG(INFO) << "Got initial GNSS pos";
+//   } else {
+//     LOG(WARNING) << "NO INIT GNSS POSE";
+//     has_initial_gnss_ = false;
+//   }
+//   // Guess pose from IMU, assumes vehicle to be static.
+//   const VioNavState& initial_state_estimate =
+//       InitializationFromImu::getInitialStateEstimate(
+//           input.imu_acc_gyrs_,
+//           imu_params_.n_gravity_,
+//           backend_params_.roundOnAutoInitialize_);
+
+//   // Initialize Backend using IMU and GNSS data.
+//   return initStateAndSetPriors(
+//     VioNavStateTimestamped(input.timestamp_, initial_state_estimate));
+// }
+
+void GnssVioBackend::addInitialPriorFactors(const FrameId& frame_id) {
+  VioBackend::addInitialPriorFactors(frame_id);
+  if (has_initial_gnss_) {
+    gtsam::Matrix6 gnss_cov = gtsam::Matrix6::Identity() *
+                              std::pow(gnss_vio_params_.initialGnssPoseSigma_, 2);
+    gtsam::SharedNoiseModel gnss_noise =
+        gtsam::noiseModel::Gaussian::Covariance(gnss_cov);
+    new_imu_prior_and_other_factors_
+        .emplace_shared<gtsam::PriorFactor<gtsam::Pose3>>(
+            gtsam::Symbol(kPoseSymbolChar, frame_id),
+            initial_gnss_pose_,
+            gnss_noise);
+
+    LOG(INFO) << "Added GNSS prior in addInitialPriorFactors() for frame "
+              << frame_id;
+  } else {
+    LOG(INFO) << "NO GNSS FOR FRAME "
+              << frame_id;
+  }
+}
  
 void GnssVioBackend::beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<gtsam::Point3>> gnss_positions) {
   if (!gnss_positions || gnss_positions->empty()) return;
 
-  gtsam::Point3 mean_gnss = std::accumulate(
-    gnss_positions->begin(), gnss_positions->end(), gtsam::Point3(0, 0, 0)) /
-    gnss_positions->size();
+  // gtsam::Point3 mean_gnss = std::accumulate(
+  //   gnss_positions->begin(), gnss_positions->end(), gtsam::Point3(0, 0, 0)) /
+  //   gnss_positions->size();
 
-addGnssFactor(curr_kf_id_, mean_gnss, &new_imu_prior_and_other_factors_);
-LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
+  gtsam::Point3 mean_gnss = gnss_positions->back();
 
+  addGnssFactor(curr_kf_id_, mean_gnss, &new_imu_prior_and_other_factors_);
+  LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
+
+  // BAD
   // for (const auto& gnss : *gnss_positions) {
   //   addGnssFactor(curr_kf_id_, gnss, &new_imu_prior_and_other_factors_);
   //   LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
@@ -246,7 +342,8 @@ LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
       const gtsam::Point3& gnss_position,
       gtsam::NonlinearFactorGraph* graph) {
     CHECK_NOTNULL(graph);
-    const gtsam::Symbol pose_key('x', frame_id);
+    auto pose_key = gtsam::Symbol(kPoseSymbolChar, frame_id);
+    // const gtsam::Symbol pose_key('x', frame_id);
     graph->add(gtsam::GnssFactor(pose_key, gnss_position, gnss_noise_));
   }
 

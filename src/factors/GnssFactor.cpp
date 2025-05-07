@@ -44,7 +44,7 @@ gtsam::Vector GnssFactor::evaluateError(
   if (H) {
     *H = (Matrix(3,6) << Matrix3::Zero(), Matrix3::Identity()).finished();
   }
-  return pose.translation() - position_;
+  return pose.translation() - position_; // взять норму вектора
 }
 
 gtsam::NonlinearFactor::shared_ptr GnssFactor::clone() const {
