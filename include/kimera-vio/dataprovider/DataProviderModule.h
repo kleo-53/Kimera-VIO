@@ -86,7 +86,7 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
     const Timestamp corrected_timestamp =
         gnss_meas.timestamp_;
     // LOG(INFO) << "GNSS ADDED TO BUFFER: " << corrected_timestamp;
-    gnss_data_.gnss_buffer_.addMeasurement(corrected_timestamp, gnss_meas.pose_);
+    gnss_data_.gnss_buffer_.addMeasurement(corrected_timestamp, gnss_meas.point_);
   }
 
   // TODO(Toni): remove, register at ctor level.
@@ -183,6 +183,7 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
                                            ImuMeasurements* imu_meas);
 
   FrameAction getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
+                                           const GnssParams& gnss_params,
                                            GnssMeasurements* gnss_meas);
 
   void logQueryResult(const Timestamp& timestamp,

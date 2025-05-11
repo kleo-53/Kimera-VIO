@@ -7,8 +7,8 @@
  * -------------------------------------------------------------------------- */
 
 /**
- * @file   StereoVisionImuFrontend.cpp
- * @brief  Class describing a stereo tracker
+ * @file   GnssStereoVisionImuFrontend.cpp
+ * @brief  Class describing a stereo tracker with gnss
  * @author Antoni Rosinol
  * @author Luca Carlone
  */
@@ -21,7 +21,8 @@
  
  #include "kimera-vio/utils/Timer.h"
  #include "kimera-vio/utils/UtilsNumerical.h"
- 
+ #include "kimera-vio/frontend/Gnss.h"
+
  DECLARE_bool(do_fine_imu_camera_temporal_sync);
  DECLARE_bool(do_fine_gnss_camera_temporal_sync);
  
@@ -32,7 +33,6 @@
    const ImuBias& imu_initial_bias,
    const FrontendParams& frontend_params,
      const StereoCamera::ConstPtr& stereo_camera,
-     const GnssParams& gnss_params,
      DisplayQueue* display_queue,
      bool log_output,
      std::optional<OdometryParams> odom_params)
@@ -41,8 +41,7 @@
                          frontend_params,
                          display_queue,
                          log_output,
-                         odom_params,
-                         gnss_params),
+                         odom_params),
        stereoFrame_k_(nullptr),
        stereoFrame_km1_(nullptr),
        stereoFrame_lkf_(nullptr),
@@ -51,7 +50,7 @@
        stereo_camera_(stereo_camera),
        stereo_matcher_(stereo_camera, frontend_params.stereo_matching_params_),
        output_images_path_("./outputImages/"),
-       gnss_positions_(std::make_optional(std::vector<gtsam::Point3>{gnss_params.b_pose_gnss.translation()})) {
+       gnss_points_() {
    CHECK(stereo_camera_);
  
    feature_detector_ = std::make_unique<FeatureDetector>(
@@ -62,9 +61,6 @@
                                         display_queue);
  
    if (VLOG_IS_ON(1)) tracker_->tracker_params_.print();
-   LOG(WARNING) << "GNSSS IN FRONT:  " << gnss_params.b_pose_gnss.translation();
-   LOG(WARNING) << "GNSS TO BACKEND: " << gnss_positions_.value()[0].transpose();
-  //  gnss_positions_ = {gnss_params.b_pose_gnss;};
  }
  
  GnssStereoVisionImuFrontend::~GnssStereoVisionImuFrontend() {
@@ -94,17 +90,21 @@
      return nullptr;  // skip adding a frame to all downstream modules
    }
  
-   const GnssPoseS& gnss_data_matrix = input->getGnssData();
-
-  std::vector<gtsam::Point3> gnss_positions_vec;
-  gnss_positions_vec.reserve(gnss_data_matrix.cols());
-  for (int i = 0; i < gnss_data_matrix.cols(); ++i) {
-    gnss_positions_vec.emplace_back(gnss_data_matrix.col(i));
+   std::optional<std::vector<GnssPoint>> gnss_points_optional = std::nullopt;
+   const GnssPointS& gnss_points_matrix = input->getGnssPoints();
+   if (gnss_points_matrix.size() != 0) {
+    gnss_points_optional.emplace(
+      [&]() {
+        std::vector<GnssPoint> vec;
+        vec.reserve(gnss_points_matrix.cols());
+        for (int i = 0; i < gnss_points_matrix.cols(); ++i) {
+          vec.emplace_back(gnss_points_matrix.col(i));
+        }
+        return vec;
+      }()
+    );
   }
-
-  auto gnss_positions_optional = std::make_optional<std::vector<gtsam::Point3>>(std::move(gnss_positions_vec));
-
-   // TOD: GNSS OUTPUT??
+  
    return std::make_unique<GnssStereoFrontendOutput>(
        stereoFrame_lkf_->isKeyframe(),
        nullptr,
@@ -117,8 +117,7 @@
        getTrackerInfo(),
        std::nullopt,  // lkf_body_Pose_kf_body
        std::nullopt,  // velocity
-      //  input->getGnssData());
-      gnss_positions_optional);
+       gnss_points_optional);
  }
  
  GnssStereoFrontendOutput::UniquePtr GnssStereoVisionImuFrontend::nominalSpinStereo(
@@ -193,16 +192,20 @@
      GnssStereoVisionImuFrontend::printStatusStereoMeasurements(
          *status_stereo_measurements);
 
-         const GnssPoseS& gnss_data_matrix = input->getGnssData();
-
-         std::vector<gtsam::Point3> gnss_positions_vec;
-         gnss_positions_vec.reserve(gnss_data_matrix.cols());
-         for (int i = 0; i < gnss_data_matrix.cols(); ++i) {
-           gnss_positions_vec.emplace_back(gnss_data_matrix.col(i));
-         }
-         
-         auto gnss_positions_optional = std::make_optional<std::vector<gtsam::Point3>>(std::move(gnss_positions_vec));
-
+   std::optional<std::vector<GnssPoint>> gnss_points_optional = std::nullopt;
+   const GnssPointS& gnss_points_matrix = input->getGnssPoints();
+   if (gnss_points_matrix.size() != 0) {
+    gnss_points_optional.emplace(
+      [&]() {
+        std::vector<GnssPoint> vec;
+        vec.reserve(gnss_points_matrix.cols());
+        for (int i = 0; i < gnss_points_matrix.cols(); ++i) {
+          vec.emplace_back(gnss_points_matrix.col(i));
+        }
+        return vec;
+      }()
+    );
+   }
  
    if (stereoFrame_km1_->isKeyframe()) {
      // We got a keyframe!
@@ -251,8 +254,7 @@
          getTrackerInfo(),
          getExternalOdometryRelativeBodyPose(input.get()),
          getExternalOdometryWorldVelocity(input.get()),
-        //  input->getGnssData());
-        gnss_positions_optional);
+        gnss_points_optional);
    } else {
      // Record frame rate timing
      timing_stats_frame_rate.AddSample(utils::Timer::toc(start_time).count());
@@ -273,8 +275,7 @@
          getTrackerInfo(),
          std::nullopt,  // lkf_body_Pose_kf_body
          std::nullopt,  // velocity
-        //  input->getGnssData());
-        gnss_positions_optional);
+        gnss_points_optional);
    }
  }
  

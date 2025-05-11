@@ -39,10 +39,12 @@ struct GnssParams : public PipelineParams {
 
  public:
   double noise_ = 0.0;
-  Timestamp timestamp_ = 0;
+  double timestamp_ = 0;
+  Timestamp period_ = 0;
+  size_t gnss_period_estimation_window_ = 50;
 
   // double nominal_sampling_time_s_ = 0.0;
-  gtsam::Pose3 b_pose_gnss = gtsam::Pose3::Identity();
+  gtsam::Pose3 b_pose_gnss_ = gtsam::Pose3::Identity();
 };
 
 }  // namespace VIO

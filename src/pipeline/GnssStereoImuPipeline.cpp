@@ -55,7 +55,8 @@
        "Gnss Stereo Data Provider",
        parallel_run_,
        // TODO(Toni): these params should not be sent...
-       params.frontend_params_.stereo_matching_params_);
+       params.frontend_params_.stereo_matching_params_,
+       params.gnss_params_);
    if (FLAGS_do_coarse_imu_camera_temporal_sync) {
      data_provider_module_->doCoarseImuCameraTemporalSync();
    }
@@ -98,7 +99,7 @@
            gtsam::imuBias::ConstantBias(),
            params.frontend_params_,
            stereo_camera_,
-           params.gnss_params_,
+        //    params.gnss_params_,
            FLAGS_visualize ? &display_input_queue_ : nullptr,
            FLAGS_log_output,
            params.odom_params_));
@@ -128,7 +129,7 @@
                converted_output->imu_acc_gyrs_,
                converted_output->body_lkf_OdomPose_body_kf_,
                converted_output->body_kf_world_OdomVel_body_kf_,
-               converted_output->gnss_positions_));
+               converted_output->gnss_points_));
          } else {
            VLOG(5)
                << "Frontend did not output a keyframe, skipping Backend input.";

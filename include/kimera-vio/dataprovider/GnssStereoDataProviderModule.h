@@ -43,7 +43,8 @@
    GnssStereoDataProviderModule(OutputQueue* output_queue,
                             const std::string& name_id,
                             const bool& parallel_run,
-                            const StereoMatchingParams& stereo_matching_params);
+                            const StereoMatchingParams& stereo_matching_params,
+                            const GnssParams& gnss_params);
  
    ~GnssStereoDataProviderModule() override = default;
  
@@ -84,6 +85,7 @@
 
    // TODO(Toni): remove these below
    StereoMatchingParams stereo_matching_params_;
+   GnssParams gnss_params_;
  };
  
  }  // namespace VIO

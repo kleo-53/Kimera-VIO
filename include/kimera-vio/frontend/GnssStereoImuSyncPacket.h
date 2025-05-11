@@ -20,7 +20,7 @@
 #include <gtsam/base/Vector.h>
 #include <gtsam/geometry/Pose3.h>
 
-#include "kimera-vio/frontend/GnssTypes.h"
+#include "kimera-vio/frontend/Gnss.h"
 #include "kimera-vio/frontend/FrontendInputPacketBase.h"
 #include "kimera-vio/frontend/StereoFrame.h"
 #include "kimera-vio/frontend/StereoImuSyncPacket.h"
@@ -37,7 +37,7 @@ class GnssStereoImuSyncPacket : public FrontendInputPacketBase {
                           const ImuStampS& imu_stamps,
                           const ImuAccGyrS& imu_accgyr,
                           const GnssStampS& gnss_stamps,
-                          const GnssPoseS& gnss_data,
+                          const GnssPointS& gnss_points,
                           std::optional<gtsam::NavState> external_odometry = std::nullopt,
                           const VIO::ReinitPacket& reinit_packet = ReinitPacket());
   ~GnssStereoImuSyncPacket() = default;
@@ -48,14 +48,14 @@ class GnssStereoImuSyncPacket : public FrontendInputPacketBase {
   inline const ReinitPacket& getReinitPacket() const { return reinit_packet_; }
   inline bool getReinitFlag() const { return reinit_packet_.getReinitFlag(); }
   inline const GnssStampS& getGnssStamps() const { return gnss_stamps_; }
-  inline const GnssPoseS& getGnssData() const { return gnss_data_; }
+  inline const GnssPointS& getGnssPoints() const { return gnss_points_; }
   
   void print() const; // TOD: надеюсь так можно
 
  private:
  const StereoFrame stereo_frame_;
  const GnssStampS gnss_stamps_;
- const GnssPoseS gnss_data_;
+ const GnssPointS gnss_points_;
  const ReinitPacket reinit_packet_;
 };
 

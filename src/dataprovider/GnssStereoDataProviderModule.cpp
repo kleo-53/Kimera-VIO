@@ -27,12 +27,14 @@
      OutputQueue* output_queue,
      const std::string& name_id,
      const bool& parallel_run,
-     const StereoMatchingParams& stereo_matching_params)
+     const StereoMatchingParams& stereo_matching_params,
+     const GnssParams& gnss_params)
      : MonoDataProviderModule(output_queue,
                               name_id,
                               parallel_run),
        right_frame_queue_("data_provider_right_frame_queue"),
-       stereo_matching_params_(stereo_matching_params) {}
+       stereo_matching_params_(stereo_matching_params),
+       gnss_params_(gnss_params) {}
  
  GnssStereoDataProviderModule::InputUniquePtr
  GnssStereoDataProviderModule::getInputPacket() {
@@ -63,7 +65,7 @@
    CHECK(right_frame_payload);
    //! Retrieve IMU data.
   GnssMeasurements gnss_meas;
-  FrameAction action = getTimeSyncedGnssMeasurements(timestamp, &gnss_meas);
+  FrameAction action = getTimeSyncedGnssMeasurements(timestamp, gnss_params_, &gnss_meas);
   switch (action) {
     case FrameAction::Use:
       break;
@@ -76,9 +78,9 @@
       break;
   }
 
-  if (gnss_meas.poses_.cols() == 0 || gnss_meas.timestamps_.cols() == 0) {
+  if (gnss_meas.points_.cols() == 0 || gnss_meas.timestamps_.cols() == 0) {
     gnss_meas.timestamps_.resize(Eigen::NoChange, 0);
-    gnss_meas.poses_.resize(Eigen::NoChange, 0);
+    gnss_meas.points_.resize(Eigen::NoChange, 0);
   }
 
 
@@ -126,7 +128,7 @@
            mono_imu_sync_packet->imu_stamps_,
            mono_imu_sync_packet->imu_accgyrs_,
            gnss_meas.timestamps_,
-           gnss_meas.poses_);
+           gnss_meas.points_);
           //  std::nullopt,
           //  VIO::ReinitPacket());
           //  Gnss(gnss_data_payload->timestamp_,

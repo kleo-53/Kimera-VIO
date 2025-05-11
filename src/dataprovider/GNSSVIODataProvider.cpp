@@ -27,6 +27,7 @@
  #include <glog/logging.h>
  #include <gflags/gflags.h>
  
+ #include <gtsam/base/Matrix.h>
  #include <gtsam/base/Vector.h>
  #include <gtsam/geometry/Cal3DS2.h>
  #include <gtsam/geometry/Pose3.h>
@@ -411,7 +412,7 @@ DECLARE_bool(log_euroc_gt_data);
      }
  
      VioNavState gt_curr;
-     gtsam::Point3 position(gt_data_raw[0], gt_data_raw[1], gt_data_raw[2]);
+     GnssPoint point(gt_data_raw[0], gt_data_raw[1], gt_data_raw[2]);
      // Quaternion w x y z.
      gtsam::Rot3 rot = gtsam::Rot3::Quaternion(
          gt_data_raw[3], gt_data_raw[4], gt_data_raw[5], gt_data_raw[6]);
@@ -434,7 +435,7 @@ DECLARE_bool(log_euroc_gt_data);
          << "(" << q.y() << "," << gt_data_raw[5] << ") "
          << "(" << q.z() << "," << gt_data_raw[6] << ").";
  
-     gt_curr.pose_ = gtsam::Pose3(rot, position);
+     gt_curr.pose_ = gtsam::Pose3(rot, point);
      gt_curr.velocity_ =
          gtsam::Vector3(gt_data_raw[7], gt_data_raw[8], gt_data_raw[9]);
      gtsam::Vector3 gyroBias =
@@ -482,12 +483,13 @@ DECLARE_bool(log_euroc_gt_data);
    std::getline(fin, line);
  
    Timestamp previous_timestamp = -1;
+   std::vector<Timestamp> timestamp_deltas;
  
    // Read/store GNSS data, line by line.
    while (std::getline(fin, line)) {
      Timestamp timestamp = 0;
      std::vector<double> gnss_data_raw;
-     for (size_t i = 0u; i < 8; i++) {  // 8 полей вместо 17
+     for (size_t i = 0u; i < 4; i++) {  // 4 полей вместо 17
        int idx = line.find_first_of(',');
        if (i == 0u) {
          timestamp = std::stoll(line.substr(0, idx));
@@ -499,36 +501,61 @@ DECLARE_bool(log_euroc_gt_data);
  
      CHECK_GT(timestamp, previous_timestamp)
        << "GNSS data is not in chronological order!";
-     previous_timestamp = timestamp;
- 
-     gtsam::Point3 position(gnss_data_raw[0], gnss_data_raw[1], gnss_data_raw[2]);
-     // Quaternion w x y z
-     gtsam::Rot3 rot = gtsam::Rot3::Quaternion(
-       gnss_data_raw[3], gnss_data_raw[4], gnss_data_raw[5], gnss_data_raw[6]);
- 
-     // Sanity check for quaternion
-     gtsam::Quaternion q = rot.toQuaternion();
-     if (std::fabs(q.w() + gnss_data_raw[3]) < std::fabs(q.w() - gnss_data_raw[3])) {
-       q.coeffs() = -1.0 * q.coeffs();
+       if (previous_timestamp != -1 && timestamp_deltas.size() < vio_params_.gnss_params_.gnss_period_estimation_window_) {
+        timestamp_deltas.push_back(timestamp - previous_timestamp);
+      }
+       previous_timestamp = timestamp;
+
+     GnssPoint gnss_curr_pose(gnss_data_raw[0], gnss_data_raw[1], gnss_data_raw[2]);
+     if (!vio_params_.gnss_params_.b_pose_gnss_.equals(gtsam::Pose3())) {
+      gtsam::Vector4 p_sensor_hom(gnss_data_raw[0], gnss_data_raw[1], gnss_data_raw[2], 1);
+      gtsam::Matrix4 T_BS_mat = vio_params_.gnss_params_.b_pose_gnss_.matrix();
+      gtsam::Vector4 p_body_hom = T_BS_mat * p_sensor_hom;
+      GnssPoint gnss_curr_pose(p_body_hom(0), p_body_hom(1), p_body_hom(2));
      }
+     // // Quaternion w x y z
+    //  gtsam::Rot3 rot = gtsam::Rot3::Quaternion(
+    //    gnss_data_raw[3], gnss_data_raw[4], gnss_data_raw[5], gnss_data_raw[6]);
  
-     LOG_IF(FATAL,
-       (fabs(q.w() - gnss_data_raw[3]) > 1e-3) ||
-       (fabs(q.x() - gnss_data_raw[4]) > 1e-3) ||
-       (fabs(q.y() - gnss_data_raw[5]) > 1e-3) ||
-       (fabs(q.z() - gnss_data_raw[6]) > 1e-3))
-       << "parseGnssData: wrong quaternion conversion"
-       << "(" << q.w() << "," << gnss_data_raw[3] << ") "
-       << "(" << q.x() << "," << gnss_data_raw[4] << ") "
-       << "(" << q.y() << "," << gnss_data_raw[5] << ") "
-       << "(" << q.z() << "," << gnss_data_raw[6] << ").";
+    //  // Sanity check for quaternion
+    //  gtsam::Quaternion q = rot.toQuaternion();
+    //  if (std::fabs(q.w() + gnss_data_raw[3]) < std::fabs(q.w() - gnss_data_raw[3])) {
+    //    q.coeffs() = -1.0 * q.coeffs();
+    //  }
  
-     auto gnss_curr_pose_ = gtsam::Pose3(rot, position);
+    //  LOG_IF(FATAL,
+    //    (fabs(q.w() - gnss_data_raw[3]) > 1e-3) ||
+    //    (fabs(q.x() - gnss_data_raw[4]) > 1e-3) ||
+    //    (fabs(q.y() - gnss_data_raw[5]) > 1e-3) ||
+    //    (fabs(q.z() - gnss_data_raw[6]) > 1e-3))
+    //    << "parseGnssData: wrong quaternion conversion"
+    //    << "(" << q.w() << "," << gnss_data_raw[3] << ") "
+    //    << "(" << q.x() << "," << gnss_data_raw[4] << ") "
+    //    << "(" << q.y() << "," << gnss_data_raw[5] << ") "
+    //    << "(" << q.z() << "," << gnss_data_raw[6] << ").";
  
-     gnss_measurements_.push_back(GnssMeasurement(timestamp, gnss_curr_pose_.translation()));
+    //  auto gnss_curr_pose_ = point ;
+     gnss_measurements_.push_back(GnssMeasurement(timestamp, gnss_curr_pose));
    }
+  //  LOG(INFO) << "MATRIX: " << vio_params_.gnss_params_.b_pose_gnss_.transpose();
  
    fin.close();
+
+   size_t used_count = std::min(vio_params_.gnss_params_.gnss_period_estimation_window_, timestamp_deltas.size());
+   if (used_count > 0) {
+      double avg_gnss_period_sec = 0.0;
+      Timestamp delta_sum = 0;
+      for (size_t i = 0; i < used_count; ++i) {
+        delta_sum += timestamp_deltas[i];
+      }
+      avg_gnss_period_sec = static_cast<double>(delta_sum) / used_count * 1e-9;  // в секундах
+      LOG(INFO) << "Average GNSS period over first " << used_count << " samples: "
+                << avg_gnss_period_sec << " seconds.";
+      if (vio_params_.gnss_params_.period_ == -1) {
+        vio_params_.gnss_params_.period_ = avg_gnss_period_sec;
+      }
+    }
+
    return true;
  }
  

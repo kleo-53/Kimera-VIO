@@ -158,11 +158,11 @@
  }
  
  void ThreadsafeGnssBuffer::linearInterpolate(const Timestamp& t0,
-                                             const GnssPose& y0,
+                                             const GnssPoint& y0,
                                              const Timestamp& t1,
-                                             const GnssPose& y1,
+                                             const GnssPoint& y1,
                                              const Timestamp& t,
-                                             GnssPose* y) {
+                                             GnssPoint* y) {
    CHECK_NOTNULL(y);
    CHECK_LE(t0, t);
    CHECK_LE(t, t1);
@@ -170,21 +170,94 @@
             y0 + (y1 - y0) * static_cast<double>(t - t0) /
                      static_cast<double>(t1 - t0);
  }
+
+ ThreadsafeGnssBuffer::QueryResult ThreadsafeGnssBuffer::getInterpolatedValueWithFixedPeriod(
+                            const Timestamp& timestamp_ns,
+                            const uint64_t gnss_period_ns,
+                            GnssStampS* gnss_timestamps,
+                            GnssPointS* gnss_points) const {
+  CHECK_NOTNULL(gnss_timestamps);
+  CHECK_NOTNULL(gnss_points);
+  // std::lock_guard<std::mutex> lock(m_buffer_);
+
+  if (buffer_.empty()) {
+    LOG(WARNING) << "GNSS buffer is empty.";
+    return QueryResult::kTooFewMeasurementsAvailable;
+  }
+
+  GnssMeasurement oldest;
+   CHECK(buffer_.getOldestValue(&oldest))
+       << "Gnss buffer failed to get oldest value";
+   if (oldest.timestamp_ > timestamp_ns) {
+     return QueryResult::kDataNeverAvailable;
+   }
+  //  GnssMeasurement newest;
+  //  CHECK(buffer_.getNewestValue(&newest))
+  //      << "Gnss buffer failed to get newest value";
+  //  if (newest.timestamp_ < timestamp) {
+  //    return QueryResult::kDataNotYetAvailable;
+  //  }
+  size_t index = static_cast<size_t>((timestamp_ns - oldest.timestamp_) / gnss_period_ns);
+  Timestamp ts_lower = oldest.timestamp_ + index * gnss_period_ns;
+  Timestamp ts_upper = ts_lower + gnss_period_ns;
+  // GnssMeasurement meas_lower, meas_upper;
+  // if (!buffer_.getValueAtTime(ts_lower, &meas_lower) ||
+  //     !buffer_.getValueAtTime(ts_upper, &meas_upper)) {
+  //   LOG(WARNING) << "Failed to retrieve GNSS points at fixed interval.";
+  //   return false;
+  // }
+   Timestamp pre_border_timestamp, post_border_timestamp;
+   GnssMeasurement pre_border_value, post_border_value;
+   if (!buffer_.getValueAtOrBeforeTime(ts_lower, &pre_border_timestamp,
+                                        &pre_border_value)) {
+       LOG(WARNING) << "The GNSS buffer seems not to contain points at or before time: "
+       << ts_lower;
+       return QueryResult::kTooFewMeasurementsAvailable;
+   }
+   CHECK_EQ(pre_border_timestamp, pre_border_value.timestamp_);
+   if (!buffer_.getValueAtOrAfterTime(ts_upper, &post_border_timestamp,
+                                       &post_border_value)) {
+      LOG(WARNING) << "The GNSS buffer seems not to contain points at or after time: "
+      << ts_upper;
+      return QueryResult::kTooFewMeasurementsAvailable;
+    }
+   CHECK_EQ(post_border_timestamp, post_border_value.timestamp_);
+   GnssPoint interpolated_gnss_point;
+   linearInterpolate(pre_border_value.timestamp_,
+                     pre_border_value.point_,
+                     post_border_value.timestamp_,
+                     post_border_value.point_,
+                     timestamp_ns,
+                     &interpolated_gnss_point);
+
+  // linearInterpolate(oldest.timestamp_,
+  //                   oldest.point_,
+  //                   newest.timestamp_,
+  //                   newest.point_,
+  //                   timestamp_ns,
+  //                   &interpolated);
+
+  gnss_timestamps->resize(Eigen::NoChange, 1u);
+  gnss_points->resize(Eigen::NoChange, 1u);
+  gnss_timestamps->rightCols<1>()(0) = timestamp_ns;
+  gnss_points->rightCols<1>() = interpolated_gnss_point;
+  return QueryResult::kDataAvailable;
+}
  
  ThreadsafeGnssBuffer::QueryResult ThreadsafeGnssBuffer::getGnssDataBtwTimestamps(
      const Timestamp& timestamp_ns_from,
      const Timestamp& timestamp_ns_to,
      GnssStampS* gnss_timestamps,
-     GnssPoseS* gnss_measurements,
+     GnssPointS* gnss_points,
      bool get_lower_bound) {
    CHECK_NOTNULL(gnss_timestamps);
-   CHECK_NOTNULL(gnss_measurements);
+   CHECK_NOTNULL(gnss_points);
    DCHECK_LT(timestamp_ns_from, timestamp_ns_to);
    QueryResult query_result =
        isDataAvailableUpToImpl(timestamp_ns_from, timestamp_ns_to);
    if (query_result != QueryResult::kDataAvailable) {
      gnss_timestamps->resize(Eigen::NoChange, 0);
-     gnss_measurements->resize(Eigen::NoChange, 0);
+     gnss_points->resize(Eigen::NoChange, 0);
      return query_result;
    }
  
@@ -196,21 +269,21 @@
                                        &between_values, get_lower_bound));
  
    if (between_values.empty()) {
-     LOG(WARNING) << "No GNSS measurements available strictly between time "
+     LOG(WARNING) << "No GNSS points available strictly between time "
                   << timestamp_ns_from << "[ns] and " << timestamp_ns_to
                   << "[ns].";
      gnss_timestamps->resize(Eigen::NoChange, 0);
-     gnss_measurements->resize(Eigen::NoChange, 0);
+     gnss_points->resize(Eigen::NoChange, 0);
      return QueryResult::kTooFewMeasurementsAvailable;
    }
  
-   const size_t num_measurements = between_values.size();
-   gnss_timestamps->resize(Eigen::NoChange, num_measurements);
-   gnss_measurements->resize(Eigen::NoChange, num_measurements);
+   const size_t num_points = between_values.size();
+   gnss_timestamps->resize(Eigen::NoChange, num_points);
+   gnss_points->resize(Eigen::NoChange, num_points);
  
-   for (size_t idx = 0u; idx < num_measurements; ++idx) {
+   for (size_t idx = 0u; idx < num_points; ++idx) {
      (*gnss_timestamps)(idx) = between_values[idx].timestamp_;
-     (*gnss_measurements).col(idx) = between_values[idx].pose_;
+     (*gnss_points).col(idx) = between_values[idx].point_;
    }
  
    return query_result;
@@ -221,34 +294,34 @@
      const Timestamp& timestamp_ns_from,
      const Timestamp& timestamp_ns_to,
      GnssStampS* gnss_timestamps,
-     GnssPoseS* gnss_measurements) {
+     GnssPointS* gnss_points) {
    CHECK_NOTNULL(gnss_timestamps);
-   CHECK_NOTNULL(gnss_measurements);
+   CHECK_NOTNULL(gnss_points);
    DCHECK_LT(timestamp_ns_from, timestamp_ns_to);
    // Get data.
    QueryResult query_result = getGnssDataBtwTimestamps(
-       timestamp_ns_from, timestamp_ns_to, gnss_timestamps, gnss_measurements,
+       timestamp_ns_from, timestamp_ns_to, gnss_timestamps, gnss_points,
        true);  // Get lower bound.
    // Early exit if there is no data.
    if (query_result != QueryResult::kDataAvailable) {
      gnss_timestamps->resize(Eigen::NoChange, 0);
-     gnss_measurements->resize(Eigen::NoChange, 0);
+     gnss_points->resize(Eigen::NoChange, 0);
      return query_result;
    }
  
    // Interpolate upper border.
-   GnssPose interpolated_upper_border;
+   GnssPoint interpolated_upper_border;
    interpolateValueAtTimestamp(timestamp_ns_to, &interpolated_upper_border);
  
    DCHECK_EQ(gnss_timestamps->rows(), 1);
-   DCHECK_EQ(gnss_measurements->rows(), 6);
-   // The last measurement will correspond to the interpolated data.
-   const size_t num_measurements = gnss_timestamps->cols() + 1u;
-   gnss_timestamps->conservativeResize(Eigen::NoChange, num_measurements);
-   gnss_measurements->conservativeResize(Eigen::NoChange, num_measurements);
+   DCHECK_EQ(gnss_points->rows(), 6);
+   // The last point will correspond to the interpolated data.
+   const size_t num_points = gnss_timestamps->cols() + 1u;
+   gnss_timestamps->conservativeResize(Eigen::NoChange, num_points);
+   gnss_points->conservativeResize(Eigen::NoChange, num_points);
    // Append upper border.
    gnss_timestamps->rightCols<1>()(0) = timestamp_ns_to;
-   gnss_measurements->rightCols<1>() = interpolated_upper_border;
+   gnss_points->rightCols<1>() = interpolated_upper_border;
  
    return query_result;
  }
@@ -258,77 +331,72 @@
      const Timestamp& timestamp_ns_from,
      const Timestamp& timestamp_ns_to,
      GnssStampS* gnss_timestamps,
-     GnssPoseS* gnss_measurements) {
+     GnssPointS* gnss_points) {
    CHECK_NOTNULL(gnss_timestamps);
-   CHECK_NOTNULL(gnss_measurements);
+   CHECK_NOTNULL(gnss_points);
    // Get data.
    GnssStampS gnss_timestamps_tmp;
-   GnssPoseS gnss_measurements_tmp;
+   GnssPointS gnss_points_tmp;
    QueryResult query_result =
        getGnssDataBtwTimestamps(timestamp_ns_from, timestamp_ns_to,
-                               &gnss_timestamps_tmp, &gnss_measurements_tmp);
+                               &gnss_timestamps_tmp, &gnss_points_tmp, true);
  
    // Early exit if there is no data.
    if (query_result != QueryResult::kDataAvailable) {
      gnss_timestamps->resize(Eigen::NoChange, 0);
-     gnss_measurements->resize(Eigen::NoChange, 0);
+     gnss_points->resize(Eigen::NoChange, 0);
      return query_result;
    }
-   if (gnss_measurements_tmp.cols() == 0) {
-    gnss_timestamps->resize(Eigen::NoChange, 0);
-    gnss_measurements->resize(Eigen::NoChange, 0);
-    return QueryResult::kTooFewMeasurementsAvailable;
-  }
  
    // Interpolate lower border.
-   GnssPose interpolated_lower_border;
+   GnssPoint interpolated_lower_border;
    interpolateValueAtTimestamp(timestamp_ns_from, &interpolated_lower_border);
    // Interpolate upper border.
-   GnssPose interpolated_upper_border;
+   GnssPoint interpolated_upper_border;
    interpolateValueAtTimestamp(timestamp_ns_to, &interpolated_upper_border);
  
    DCHECK_EQ(gnss_timestamps->rows(), 1);
-   DCHECK_EQ(gnss_measurements->rows(), 6);
-   // The first and last measurements will correspond to the interpolated data.
-   const size_t num_measurements = gnss_timestamps_tmp.cols() + 2u;
-   gnss_timestamps->resize(Eigen::NoChange, num_measurements);
-   gnss_measurements->resize(Eigen::NoChange, num_measurements);
+   DCHECK_EQ(gnss_points->rows(), 6);
+   // The first and last points will correspond to the interpolated data.
+   const size_t num_points = gnss_timestamps_tmp.cols() + 2u;
+   gnss_timestamps->resize(Eigen::NoChange, num_points);
+   gnss_points->resize(Eigen::NoChange, num_points);
    // Prepend lower border.
    gnss_timestamps->leftCols<1>()(0) = timestamp_ns_from;
-   gnss_measurements->leftCols<1>() = interpolated_lower_border;
-   // Add measurements.
+   gnss_points->leftCols<1>() = interpolated_lower_border;
+   // Add points.
    gnss_timestamps->middleCols(1, gnss_timestamps_tmp.cols()) = gnss_timestamps_tmp;
-   gnss_measurements->middleCols(1, gnss_measurements_tmp.cols()) =
-       gnss_measurements_tmp;
+   gnss_points->middleCols(1, gnss_points_tmp.cols()) =
+       gnss_points_tmp;
    // Append upper border.
    gnss_timestamps->rightCols<1>()(0) = timestamp_ns_to;
-   gnss_measurements->rightCols<1>() = interpolated_upper_border;
+   gnss_points->rightCols<1>() = interpolated_upper_border;
  
    return query_result;
  }
  
  void ThreadsafeGnssBuffer::interpolateValueAtTimestamp(
      const Timestamp& timestamp_ns,
-     GnssPose* interpolated_gnss_measurement) {
-   CHECK_NOTNULL(interpolated_gnss_measurement);
+     GnssPoint* interpolated_gnss_point) {
+   CHECK_NOTNULL(interpolated_gnss_point);
    Timestamp pre_border_timestamp, post_border_timestamp;
    GnssMeasurement pre_border_value, post_border_value;
    CHECK(buffer_.getValueAtOrBeforeTime(timestamp_ns, &pre_border_timestamp,
                                         &pre_border_value))
-       << "The GNSS buffer seems not to contain measurements at or before time: "
+       << "The GNSS buffer seems not to contain points at or before time: "
        << timestamp_ns;
    CHECK_EQ(pre_border_timestamp, pre_border_value.timestamp_);
    CHECK(buffer_.getValueAtOrAfterTime(timestamp_ns, &post_border_timestamp,
                                        &post_border_value))
-       << "The GNSS buffer seems not to contain measurements at or after time: "
+       << "The GNSS buffer seems not to contain points at or after time: "
        << timestamp_ns;
    CHECK_EQ(post_border_timestamp, post_border_value.timestamp_);
    linearInterpolate(pre_border_value.timestamp_,
-                     pre_border_value.pose_,
+                     pre_border_value.point_,
                      post_border_value.timestamp_,
-                     post_border_value.pose_,
+                     post_border_value.point_,
                      timestamp_ns,
-                     interpolated_gnss_measurement);
+                     interpolated_gnss_point);
  }
  
  ThreadsafeGnssBuffer::QueryResult
@@ -337,11 +405,11 @@
      const Timestamp& timestamp_ns_to,
      const Timestamp& wait_timeout_nanoseconds,
      GnssStampS* gnss_timestamps,
-     GnssPoseS* gnss_measurements) {
+     GnssPointS* gnss_points) {
    CHECK_NOTNULL(gnss_timestamps);
-   CHECK_NOTNULL(gnss_measurements);
+   CHECK_NOTNULL(gnss_points);
  
-   // Wait for the GNSS buffer to contain the required measurements within a
+   // Wait for the GNSS buffer to contain the required points within a
    // timeout.
    auto tic = Timer::tic();
    QueryResult query_result;
@@ -355,7 +423,7 @@
  
        if (shutdown_) {
          gnss_timestamps->resize(Eigen::NoChange, 0);
-         gnss_measurements->resize(Eigen::NoChange, 0);
+         gnss_points->resize(Eigen::NoChange, 0);
          return QueryResult::kQueueShutdown;
        }
  
@@ -363,7 +431,7 @@
        auto toc = Timer::toc<std::chrono::nanoseconds>(tic);
        if (toc.count() >= wait_timeout_nanoseconds) {
          gnss_timestamps->resize(Eigen::NoChange, 0);
-         gnss_measurements->resize(Eigen::NoChange, 0);
+         gnss_points->resize(Eigen::NoChange, 0);
          LOG(WARNING) << "Timeout reached while trying to get the requested "
                       << "GNSS data. Requested range: " << timestamp_ns_from
                       << " to " << timestamp_ns_to << ".";
@@ -381,7 +449,7 @@
      }
    }
    return getGnssDataInterpolatedBorders(timestamp_ns_from, timestamp_ns_to,
-                                        gnss_timestamps, gnss_measurements);
+                                        gnss_timestamps, gnss_points);
  }
  
  }  // namespace utils

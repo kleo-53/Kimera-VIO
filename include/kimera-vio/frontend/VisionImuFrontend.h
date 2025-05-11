@@ -56,8 +56,8 @@ class VisionImuFrontend {
                     const FrontendParams& frontend_params,
                     DisplayQueue* display_queue,
                     bool log_output,
-                    std::optional<OdometryParams> odom_params = std::nullopt,
-                    std::optional<GnssParams> gnss_params = std::nullopt);
+                    std::optional<OdometryParams> odom_params = std::nullopt);//,
+                    // std::optional<GnssParams> gnss_params = std::nullopt);
 
   virtual ~VisionImuFrontend();
 
@@ -224,7 +224,7 @@ class VisionImuFrontend {
 
   // External odometry
   std::optional<OdometryParams> odom_params_;
-  std::optional<GnssParams> gnss_params_;
+  // std::optional<GnssParams> gnss_params_;
   // world_Pose_body for the last keyframe
   std::optional<gtsam::Pose3> world_OdomPose_body_lkf_;
 };

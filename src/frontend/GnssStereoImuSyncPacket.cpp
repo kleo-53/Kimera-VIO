@@ -26,7 +26,7 @@ GnssStereoImuSyncPacket::GnssStereoImuSyncPacket(
     const ImuStampS& imu_stamps,
     const ImuAccGyrS& imu_accgyrs,
     const GnssStampS& gnss_stamps,
-    const GnssPoseS& gnss_data,
+    const GnssPointS& gnss_points,
     const std::optional<gtsam::NavState> external_odometry,
     const ReinitPacket& reinit_packet)
     : FrontendInputPacketBase(
@@ -36,7 +36,7 @@ GnssStereoImuSyncPacket::GnssStereoImuSyncPacket(
       external_odometry),
       stereo_frame_(stereo_frame),
       gnss_stamps_(gnss_stamps),
-      gnss_data_(gnss_data),
+      gnss_points_(gnss_points),
       reinit_packet_(reinit_packet) {
   // The timestamp of the last IMU measurement must correspond to the timestamp
   // of the stereo frame. In case there is no IMU measurement with exactly
@@ -44,18 +44,18 @@ GnssStereoImuSyncPacket::GnssStereoImuSyncPacket(
   // IMU measurements to get a value at the time of the stereo_frame.
   CHECK_GT(imu_stamps_.cols(), 0);
   CHECK_EQ(stereo_frame_.timestamp_, imu_stamps_(imu_stamps_.cols() - 1));
-  // LOG(WARNING) << "GNSS POSES SIZE IN SYNCPACKET" << gnss_data.size();
+  // LOG(WARNING) << "GNSS POSES SIZE IN SYNCPACKET" << gnss_points.size();
 }
 
 // GnssStereoImuSyncPacket::GnssStereoImuSyncPacket(
 //     const StereoImuSyncPacket::UniquePtr&& sis_packet,
-//     const Gnss& gnss_data)
+//     const Gnss& gnss_points)
 //     : StereoImuSyncPacket(sis_packet->getStereoFrame(),
 //                           sis_packet->getImuStamps(),
 //                           sis_packet->getImuAccGyrs(),
 //                           std::nullopt,
 //                           sis_packet->getReinitPacket()),
-//       gnss_data_(gnss_data) {}
+//       gnss_points_(gnss_points) {}
       
 void GnssStereoImuSyncPacket::print() const {
   LOG(INFO) << "Stereo Frame timestamp: " << stereo_frame_.timestamp_ << '\n'
@@ -81,10 +81,10 @@ void GnssStereoImuSyncPacket::print() const {
               << "BIAS : \n"
               << reinit_packet_.getReinitBias();
   }
-  // if (gnss_data_) {
+  // if (gnss_points_) {
     LOG(INFO) << "GNSS Data is present.\n"
                 << "GNSS Timestamp: " << gnss_stamps_.rows() << '\n'
-                << "GNSS Position: " << gnss_data_.rows() << '\n';
+                << "GNSS Position: " << gnss_points_.rows() << '\n';
   // } else {
     // LOG(INFO) << "No GNSS Data.\n";
   // }

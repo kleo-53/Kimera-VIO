@@ -302,7 +302,7 @@ bool VioBackend::addVisualInertialStateAndOptimize(
     const gtsam::PreintegrationType& pim,
     std::optional<gtsam::Pose3> odometry_body_pose,
     std::optional<gtsam::Velocity3> odometry_vel,
-    std::optional<std::vector<gtsam::Point3>> gnss_positions) {
+    std::optional<std::vector<GnssPoint>> gnss_points) {
   debug_info_.resetAddedFactorsStatistics();
 
   // Features and IMU line up --> do iSAM update
@@ -441,7 +441,7 @@ bool VioBackend::addVisualInertialStateAndOptimize(const BackendInput& input) {
       *input.pim_,                            // Imu preintegrated data.
       input.body_lkf_OdomPose_body_kf_,
       input.body_kf_world_OdomVel_body_kf_,
-      input.gnss_positions_);
+      input.gnss_points_);
   // Bookkeeping
   timestamp_lkf_ = input.timestamp_;
   LOG(INFO) << "IN VIOBACKEND";

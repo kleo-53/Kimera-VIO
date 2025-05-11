@@ -48,10 +48,10 @@ class RegularVioBackend : public VioBackend {
       const gtsam::PreintegrationType& pim,
       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
-      std::optional<std::vector<gtsam::Point3>> gnss_positions = {}) override;
+      std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt) override;
 
 protected:
-    virtual void beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<gtsam::Point3>> gnss_positions = {}) {}
+    virtual void beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt) {}
 
  private:
   typedef size_t Slot;

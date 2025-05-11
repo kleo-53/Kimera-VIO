@@ -29,6 +29,7 @@
 #include "kimera-vio/frontend/StereoMatchingParams.h"
 #include "kimera-vio/logging/Logger.h"
 #include "kimera-vio/utils/Macros.h"
+#include "kimera-vio/frontend/Gnss.h"
 
 namespace VIO {
 

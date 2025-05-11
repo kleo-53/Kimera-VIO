@@ -153,7 +153,7 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
     const gtsam::PreintegrationType& pim,
     std::optional<gtsam::Pose3> odometry_body_pose,
     std::optional<gtsam::Velocity3> odometry_vel,
-    std::optional<std::vector<gtsam::Point3>> gnss_positions) {
+    std::optional<std::vector<GnssPoint>> gnss_points) {
   LOG(INFO) << "IN REGULARVIOBACKEND";
   debug_info_.resetAddedFactorsStatistics();
 
@@ -376,17 +376,17 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
         curr_kf_id_, *odometry_vel, odom_params_->velocityPrecision_);
   }
 
-  if (gnss_positions && !gnss_positions->empty()) {
+  if (gnss_points && !gnss_points->empty()) {
     const gtsam::Symbol pose_key('x', curr_kf_id_);
     // const auto& pose_estimate = smoother_->calculateEstimate<gtsam::Pose3>(pose_key).translation();
-    LOG(WARNING) << "GNSS XYZ: " << gnss_positions.value()[0].transpose();
+    LOG(WARNING) << "GNSS XYZ: " << gnss_points.value()[0].transpose();
     if (odometry_body_pose) {
-      const auto residual = (odometry_body_pose->translation() - (*gnss_positions)[0]).transpose();
+      const auto residual = (odometry_body_pose->translation() - (*gnss_points)[0]).transpose();
       LOG(INFO) << "Pre-opt residual (using odometry): " << residual.transpose();
     }
     // LOG(WARNING) << "Pose XYZ: " << pose_estimate.transpose();
-    // LOG(WARNING) << "Residual: " << (pose_estimate - gnss_positions.value()[0]).transpose();
-    this->beforeOptimizeHook(timestamp_kf_nsec, gnss_positions);
+    // LOG(WARNING) << "Residual: " << (pose_estimate - gnss_points.value()[0]).transpose();
+    this->beforeOptimizeHook(timestamp_kf_nsec, gnss_points);
   }
 
   /////////////////// OPTIMIZE /////////////////////////////////////////////////

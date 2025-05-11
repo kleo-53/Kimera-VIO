@@ -23,6 +23,7 @@
 #include "kimera-vio/backend/RegularVioBackend.h"
 #include "kimera-vio/backend/GnssVioBackend-definitions.h"
 #include "kimera-vio/backend/GnssVioBackendParams.h"
+#include "kimera-vio/frontend/Gnss.h"
 
 namespace VIO {
 
@@ -38,14 +39,14 @@ class GnssVioBackend : public RegularVioBackend {
 
   virtual ~GnssVioBackend() = default;
 
-  void beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<gtsam::Point3>> gnss_positions = {}) override;
+  void beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt) override;
 //   bool addVisualInertialStateAndOptimize(
 //       const Timestamp& timestamp_kf_nsec,
 //       const StatusStereoMeasurements& status_smart_stereo_measurements_kf,
 //       const gtsam::PreintegrationType& pim,
 //       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
 //       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
-//       std::optional<gtsam::Point3> gnss_position = std::nullopt);  // GNSS
+//       std::optional<gtsam::Point3> gnss_point = std::nullopt);  // GNSS
 
   // bool addVisualInertialStateAndOptimize(
   //       const Timestamp& timestamp_kf_nsec,
@@ -53,7 +54,7 @@ class GnssVioBackend : public RegularVioBackend {
   //       const gtsam::PreintegrationType& pim,
   //       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
   //       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
-  //       std::optional<std::vector<gtsam::Point3>> gnss_positions = {});
+  //       std::optional<std::vector<gtsam::Point3>> gnss_points = {});
     
  private:
   const GnssVioBackendParams gnss_vio_params_;
@@ -70,7 +71,7 @@ class GnssVioBackend : public RegularVioBackend {
 
   void addGnssFactor(
       const FrameId& frame_id,
-      const gtsam::Point3& gnss_position,
+      const GnssPoint& gnss_point,
       gtsam::NonlinearFactorGraph* graph);
 };
 

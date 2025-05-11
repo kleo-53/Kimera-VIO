@@ -35,6 +35,7 @@
  #include "kimera-vio/utils/ThreadsafeQueue.h"
  #include "kimera-vio/utils/Timer.h"
  #include "kimera-vio/frontend/GnssStereoVisionImuFrontend-definitions.h"
+ #include "kimera-vio/frontend/Gnss.h"
  
  namespace VIO {
  
@@ -51,7 +52,7 @@
                            const ImuBias& imu_initial_bias,
                            const FrontendParams& tracker_params,
                            const StereoCamera::ConstPtr& stereo_camera,
-                           const GnssParams& gnss_params,
+                        //    const GnssParams& gnss_params,
                            DisplayQueue* display_queue = nullptr,
                            bool log_output = false,
                            std::optional<OdometryParams> odom_params = std::nullopt);
@@ -176,7 +177,7 @@
    // where we like
    std::string output_images_path_;
 
-   std::optional<std::vector<gtsam::Point3>> gnss_positions_;
+   std::optional<std::vector<GnssPoint>> gnss_points_;
  };
  
  }  // namespace VIO

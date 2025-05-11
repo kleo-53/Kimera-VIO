@@ -40,6 +40,9 @@
                          odom_params),
        gnss_vio_params_(GnssVioBackendParams::safeCast(backend_params)) {
         LOG(INFO) << "Using Gnss VIO Backend.\n";
+        // gnss_noise_ = gtsam::noiseModel::Diagonal::Sigmas(
+        //   (gtsam::Vector(3) << gnss_vio_params_.gnssNoiseSigma_, gnss_vio_params_.gnssNoiseSigma_, gnss_vio_params_.gnssNoiseSigma_).finished()
+        // );
         auto base_model = gtsam::noiseModel::Isotropic::Sigma(
           3, gnss_vio_params_.gnssNoiseSigma_);
         selectNormType(&gnss_noise_,
@@ -54,16 +57,16 @@
 //      const gtsam::PreintegrationType& pim,
 //      std::optional<gtsam::Pose3> odometry_body_pose,
 //      std::optional<gtsam::Velocity3> odometry_vel,
-//      const std::vector<gtsam::Point3>& gnss_positions = {})  // GNSS
+//      const std::vector<gtsam::Point3>& gnss_points = {})  // GNSS
 //  {
-//   if (gnss_position) {
+//   if (gnss_point) {
 //     return addVisualInertialStateAndOptimize(
 //         timestamp_kf_nsec,
 //         status_smart_stereo_measurements_kf,
 //         pim,
 //         odometry_body_pose,
 //         odometry_vel,
-//         std::vector<gtsam::Point3>{*gnss_position});
+//         std::vector<gtsam::Point3>{*gnss_point});
 //   } else {
 //     return addVisualInertialStateAndOptimize(
 //         timestamp_kf_nsec,
@@ -96,14 +99,14 @@
 //     }
 //     case BackendState::Nominal: {
 //       // Process data with VIO.
-//       // if (!input.gnss_positions_.empty()) {
+//       // if (!input.gnss_points_.empty()) {
 //         backend_status = addVisualInertialStateAndOptimize(
 //             input.timestamp_,
 //             input.status_stereo_measurements_kf_,
 //             input.pim_,
 //             input.body_lkf_OdomPose_body_kf_,
 //             input.body_kf_world_OdomVel_body_kf_,
-//             input.gnss_positions_);
+//             input.gnss_points_);
 //       // } else {
 //       //   backend_status = addVisualInertialStateAndOptimize(
 //       //       input.timestamp_,
@@ -195,7 +198,7 @@
 //     const gtsam::PreintegrationType& pim,
 //     std::optional<gtsam::Pose3> odometry_body_pose,
 //     std::optional<gtsam::Velocity3> odometry_vel,
-//     std::optional<std::vector<gtsam::Point3>> gnss_positions)
+//     std::optional<std::vector<gtsam::Point3>> gnss_points)
 //   {
 //     LOG(INFO) << "IN GNSS BACKEND";
 //     bool success = RegularVioBackend::addVisualInertialStateAndOptimize(
@@ -204,9 +207,9 @@
 //       pim,
 //       odometry_body_pose,
 //       odometry_vel,
-//       gnss_positions);
+//       gnss_points);
 
-//     if (!success || !gnss_positions || gnss_positions->empty()) {
+//     if (!success || !gnss_points || gnss_points->empty()) {
 //       LOG(WARNING) << "NO GNSS IN BACKEND";
 //       return success;
 //     }
@@ -215,7 +218,7 @@
 //     const FrameId frame_id = curr_kf_id_;
 //     const gtsam::Symbol pose_key('x', frame_id);  // привязка к текущему кадру
     
-//     for (const auto& gnss : *gnss_positions) {
+//     for (const auto& gnss : *gnss_points) {
 //       gnss_factor_graph.add(gtsam::GnssFactor(pose_key, gnss, gnss_noise_));
 //       LOG(INFO) << "Adding GNSS factor at timestamp " << frame_id;
 //     }
@@ -225,17 +228,20 @@
 //     return true;
 // }
  
-void GnssVioBackend::beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<gtsam::Point3>> gnss_positions) {
-  if (!gnss_positions || gnss_positions->empty()) return;
+void GnssVioBackend::beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<GnssPoint>> gnss_points) {
+  if (!gnss_points || gnss_points->empty()) return;
 
-  gtsam::Point3 mean_gnss = std::accumulate(
-    gnss_positions->begin(), gnss_positions->end(), gtsam::Point3(0, 0, 0)) /
-    gnss_positions->size();
+  // gtsam::Point3 mean_gnss = std::accumulate(
+  //   gnss_points->begin(), gnss_points->end(), gtsam::Point3(0, 0, 0)) /
+  //   gnss_points->size();
 
-addGnssFactor(curr_kf_id_, mean_gnss, &new_imu_prior_and_other_factors_);
-LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
+  GnssPoint mean_gnss = gnss_points->back();
 
-  // for (const auto& gnss : *gnss_positions) {
+  addGnssFactor(curr_kf_id_, mean_gnss, &new_imu_prior_and_other_factors_);
+  LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
+
+  // BAD
+  // for (const auto& gnss : *gnss_points) {
   //   addGnssFactor(curr_kf_id_, gnss, &new_imu_prior_and_other_factors_);
   //   LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
   // }
@@ -243,11 +249,11 @@ LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
 
   void GnssVioBackend::addGnssFactor(
       const FrameId& frame_id,
-      const gtsam::Point3& gnss_position,
+      const GnssPoint& gnss_point,
       gtsam::NonlinearFactorGraph* graph) {
     CHECK_NOTNULL(graph);
     const gtsam::Symbol pose_key('x', frame_id);
-    graph->add(gtsam::GnssFactor(pose_key, gnss_position, gnss_noise_));
+    graph->add(gtsam::GnssFactor(pose_key, gnss_point, gnss_noise_));
   }
 
  /* -------------------------------------------------------------------------- */

@@ -45,7 +45,7 @@
  #include "kimera-vio/common/vio_types.h"
 //  #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
  #include "kimera-vio/utils/ThreadsafeTemporalBuffer.h"
- #include "kimera-vio/frontend/GnssTypes.h"
+ #include "kimera-vio/frontend/Gnss.h"
  
  namespace VIO {
  
@@ -89,9 +89,9 @@
    /// Add GNSS measurement in GNSS frame.
    /// (Ordering: accelerations [m/s^2], angular velocities [rad/s])
    inline void addMeasurement(const Timestamp& timestamp_nanoseconds,
-                              const GnssPose& gnss_measurement);
+                              const GnssPoint& gnss_point);
    inline void addMeasurements(const GnssStampS& timestamps_nanoseconds,
-                               const GnssPoseS& gnss_measurements);
+                               const GnssPointS& gnss_points);
  
    // Get Gnss data strictly between Timestamps.
    // Example: content: 2 3 4 5
@@ -103,7 +103,7 @@
    QueryResult getGnssDataBtwTimestamps(const Timestamp& timestamp_ns_from,
                                        const Timestamp& timestamp_ns_to,
                                        GnssStampS* gnss_timestamps,
-                                       GnssPoseS* gnss_measurements,
+                                       GnssPointS* gnss_points,
                                        bool get_lower_bound = false);
  
    /// \brief Return a list of the Gnss measurements between the specified
@@ -113,7 +113,7 @@
    /// [ns].
    /// @param[in] timestamp_to Try to get the Gnss measurements up this time [ns].
    /// @param[out] gnss_timestamps List of timestamps. [ns]
-   /// @param[out] gnss_measurements List of Gnss measurements. (Order: [acc,
+   /// @param[out] gnss_points List of Gnss measurements. (Order: [acc,
    /// gyro])
    /// @return The return code signals if the buffer does not contain data
    /// up to the requested timestamp.
@@ -121,7 +121,7 @@
    QueryResult getGnssDataInterpolatedBorders(const Timestamp& timestamp_from,
                                              const Timestamp& timestamp_to,
                                              GnssStampS* gnss_timestamps,
-                                             GnssPoseS* gnss_measurements);
+                                             GnssPointS* gnss_points);
  
    /// \brief Return a list of the Gnss measurements between the specified
    /// timestamps. ONLY the Gnss newest value gets interpolated (if the queried
@@ -132,7 +132,7 @@
    /// [ns].
    /// @param[in] timestamp_to Try to get the Gnss measurements up this time [ns].
    /// @param[out] gnss_timestamps List of timestamps. [ns]
-   /// @param[out] gnss_measurements List of Gnss measurements. (Order: [acc,
+   /// @param[out] gnss_points List of Gnss measurements. (Order: [acc,
    /// gyro])
    /// @return The return code signals if the buffer does not contain data
    /// surrounding the requested timestamps
@@ -142,16 +142,16 @@
        const Timestamp& timestamp_ns_from,
        const Timestamp& timestamp_ns_to,
        GnssStampS* gnss_timestamps,
-       GnssPoseS* gnss_measurements);
+       GnssPointS* gnss_points);
  
    // Interpolates an Gnss measurement at timestamp by taking previous and
    // posterior measurements to the given timestamp.
    // WARNING: the user must make sure the buffer has enough elements.
    // This can be done be checked using the isDataAvailableUpToImpl function.
    void interpolateValueAtTimestamp(const Timestamp& timestamp_ns,
-                                    GnssPose* interpolated_gnss_measurement);
+                                    GnssPoint* interpolated_gnss_point);
  
-   /// Try to pop the requested Gnss measurements for the duration of
+   /// Try to pop the requested Gnss points for the duration of
    /// wait_timeout_nanoseconds.
    /// If the requested data is still not available when timeout has been
    /// reached, the method
@@ -161,19 +161,25 @@
        const Timestamp& timestamp_ns_to,
        const Timestamp& wait_timeout_nanoseconds,
        GnssStampS* gnss_timestamps,
-       GnssPoseS* gnss_measurements);
+       GnssPointS* points);
+  
+  QueryResult getInterpolatedValueWithFixedPeriod(
+        const Timestamp& timestamp_ns,
+        const uint64_t gnss_period_ns,
+        GnssStampS* gnss_timestamps,
+        GnssPointS* gnss_points) const;
  
    /// Get the most recently pushed Gnss measurement
    /// Returns true unless the buffer is empty
    bool getNewestGnssMeasurement(GnssMeasurement* value);
  
-   /// Linear interpolation between two gnss measurements.
+   /// Linear interpolation between two gnss points.
    static void linearInterpolate(const Timestamp& x0,
-                                 const GnssPose& y0,
+                                 const GnssPoint& y0,
                                  const Timestamp& x1,
-                                 const GnssPose& y1,
+                                 const GnssPoint& y1,
                                  const Timestamp& x,
-                                 GnssPose* y);
+                                 GnssPoint* y);
  
   private:
    /// TODO I think this comment is deprecated:

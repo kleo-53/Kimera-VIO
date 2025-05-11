@@ -51,7 +51,7 @@ namespace utils {
 
 inline void ThreadsafeGnssBuffer::addMeasurement(
     const Timestamp& timestamp_nanoseconds,
-    const GnssPose& gnss_measurement) {
+    const GnssPoint& gnss_point) {
   // Enforce strict time-wise ordering.
   GnssMeasurement last_value;
   if (buffer_.getNewestValue(&last_value)) {
@@ -63,7 +63,7 @@ inline void ThreadsafeGnssBuffer::addMeasurement(
   }
   buffer_.addValue(
       timestamp_nanoseconds,
-      GnssMeasurement(timestamp_nanoseconds, gnss_measurement));
+      GnssMeasurement(timestamp_nanoseconds, gnss_point));
 
   // Notify possibly waiting consumers.
   cv_new_measurement_.notify_all();
@@ -71,13 +71,13 @@ inline void ThreadsafeGnssBuffer::addMeasurement(
 
 inline void ThreadsafeGnssBuffer::addMeasurements(
     const GnssStampS& timestamps_nanoseconds,
-    const GnssPoseS& gnss_measurements) {
-  CHECK_EQ(timestamps_nanoseconds.cols(), gnss_measurements.cols());
+    const GnssPointS& gnss_points) {
+  CHECK_EQ(timestamps_nanoseconds.cols(), gnss_points.cols());
   size_t num_samples = timestamps_nanoseconds.cols();
   CHECK_GT(num_samples, 0u);
 
   for (size_t idx = 0u; idx < num_samples; ++idx) {
-    addMeasurement(timestamps_nanoseconds(idx), gnss_measurements.col(idx));
+    addMeasurement(timestamps_nanoseconds(idx), gnss_points.col(idx));
   }
 }
 

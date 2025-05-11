@@ -221,7 +221,7 @@ class VioBackend {
       const gtsam::PreintegrationType& pim,
       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
-      std::optional<std::vector<gtsam::Point3>> gnss_positions = {});
+      std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt);
 
   // Uses landmark table to add factors in graph.
   void addLandmarksToGraph(const LandmarkIds& landmarks_kf);

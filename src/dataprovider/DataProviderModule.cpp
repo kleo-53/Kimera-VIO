@@ -186,6 +186,7 @@ DataProviderModule::getTimeSyncedImuMeasurements(const Timestamp& timestamp,
 
 DataProviderModule::FrameAction
 DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
+                                                 const GnssParams& gnss_params,
                                                  GnssMeasurements* gnss_meas) {
   if (MISO::shutdown_) {
     return FrameAction::Drop;
@@ -222,15 +223,24 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
     gnss_timestamp_correction_ = newest_gnss.timestamp_ - timestamp;
     do_coarse_gnss_camera_temporal_sync_ = false;
     LOG(WARNING) << "Computed intial coarse time alignment of "
-                 << UtilsNumerical::NsecToSec(imu_timestamp_correction_)
+                 << UtilsNumerical::NsecToSec(gnss_timestamp_correction_)
                  << "[s]";
   }
 
-  // const Timestamp curr_gnss_time_shift = gnss_time_shift_ns_;
-  const Timestamp gnss_timestamp_last_frame =
-      timestamp_last_frame_ + gnss_timestamp_correction_;// + curr_gnss_time_shift;
+  ThreadsafeGnssBuffer::QueryResult query_result;
+  const Timestamp curr_gnss_time_shift = gnss_time_shift_ns_;
   const Timestamp gnss_timestamp_curr_frame =
-      timestamp + gnss_timestamp_correction_;// + curr_gnss_time_shift;
+      timestamp + gnss_timestamp_correction_ + curr_gnss_time_shift;
+  if (gnss_params.period_ != -1) {
+    query_result = 
+    gnss_data_.gnss_buffer_.getInterpolatedValueWithFixedPeriod(
+      gnss_timestamp_curr_frame,
+      gnss_params.period_,
+      &gnss_meas->timestamps_,
+      &gnss_meas->points_);
+  } else {
+  const Timestamp gnss_timestamp_last_frame =
+      timestamp_last_frame_ + gnss_timestamp_correction_ + curr_gnss_time_shift;
 
   // NOTE: using interpolation on both borders instead of just the upper 
   // as before because without a measurement on the left-hand side we are 
@@ -239,22 +249,27 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
   // For some datasets this caused an incorrect motion estimate
 
   // TOD: было так, но я хочу полегковеснее gnss buffer сделать
-  ThreadsafeGnssBuffer::QueryResult query_result =
+  query_result =
       gnss_data_.gnss_buffer_.getGnssDataInterpolatedBorders(
           gnss_timestamp_last_frame,
           gnss_timestamp_curr_frame,
           &gnss_meas->timestamps_,
-          &gnss_meas->poses_); //,
+          &gnss_meas->points_); //,
+      }
+
+
+
           // &imu_meas->acc_gyr_);
   // logQueryResult(timestamp, query_result);
   LOG(INFO) << "Query GNSS at " << gnss_timestamp_curr_frame;
+  // LOG(INFO) << "GNSS time shift: " << gnss_time_shift_ns_;
   // LOG(INFO) << "GNSS interpolation result: " << static_cast<int>(query_result);
   // LOG(INFO) << "GNSS timestamps size: " << gnss_meas->timestamps_.cols();
-  // LOG(INFO) << "GNSS poses size: " << gnss_meas->poses_.cols();
+  // LOG(INFO) << "GNSS poses size: " << gnss_meas->points_.cols();
 
   // for (int i = 0; i < gnss_meas->timestamps_.cols(); ++i) {
   //   LOG(INFO) << "GNSS @ " << gnss_meas->timestamps_(0, i) << ": "
-  //             << gnss_meas->poses_.col(i).transpose();
+  //             << gnss_meas->points_.col(i).transpose();
   // }
   // ThreadsafeGnssBuffer::QueryResult query_result = 
   //   gnss_data_.gnss_buffer_.getNearest(
@@ -279,10 +294,10 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
       // break;
       return FrameAction::Drop;
   }
-  if (gnss_meas->timestamps_.cols() == 0 || gnss_meas->poses_.cols() == 0) {
+  if (gnss_meas->timestamps_.cols() == 0 || gnss_meas->points_.cols() == 0) {
     return FrameAction::Drop;
   }
-  gnss_meas->timestamps_.array() -= gnss_timestamp_correction_;// + curr_gnss_time_shift;
+  gnss_meas->timestamps_.array() -= gnss_timestamp_correction_ + curr_gnss_time_shift;
 
   // gnss_meas->timestamps_.array() -= gnss_timestamp_correction_;// + curr_gnss_time_shift;
   VLOG(10) << "////////////////////////////////////////// Creating packet!\n"

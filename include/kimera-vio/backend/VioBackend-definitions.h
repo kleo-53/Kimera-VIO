@@ -238,16 +238,16 @@ struct BackendInput : public PipelinePayload {
       const ImuAccGyrS& imu_acc_gyrs,
       std::optional<gtsam::Pose3> body_lkf_OdomPose_body_kf = std::nullopt,
       std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf = std::nullopt,
-      std::optional<std::vector<gtsam::Point3>> gnss_positions = std::nullopt)
+      std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt)
       : PipelinePayload(timestamp_kf_nsec),
         status_stereo_measurements_kf_(status_stereo_measurements_kf),
         pim_(pim),
         imu_acc_gyrs_(imu_acc_gyrs),
         body_lkf_OdomPose_body_kf_(body_lkf_OdomPose_body_kf),
         body_kf_world_OdomVel_body_kf_(body_kf_world_OdomVel_body_kf),
-        gnss_positions_(gnss_positions) {
-          if (gnss_positions && !gnss_positions->empty()) {
-            LOG(WARNING) << "GNSS IN INPUT" << gnss_positions.value()[0].transpose();
+        gnss_points_(gnss_points) {
+          if (gnss_points && !gnss_points->empty()) {
+            LOG(WARNING) << "GNSS IN INPUT" << gnss_points.value()[0].transpose();
           }
         }
 
@@ -258,14 +258,14 @@ struct BackendInput : public PipelinePayload {
   //         const ImuAccGyrS& imu_acc_gyrs,
   //         std::optional<gtsam::Pose3> body_lkf_OdomPose_body_kf = std::nullopt,
   //         std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf = std::nullopt,
-  //         const std::vector<gtsam::Point3>& gnss_positions = {})
+  //         const std::vector<gtsam::Point3>& gnss_points = {})
   //         : PipelinePayload(timestamp_kf_nsec),
   //           status_stereo_measurements_kf_(status_stereo_measurements_kf),
   //           pim_(pim),
   //           imu_acc_gyrs_(imu_acc_gyrs),
   //           body_lkf_OdomPose_body_kf_(body_lkf_OdomPose_body_kf),
   //           body_kf_world_OdomVel_body_kf_(body_kf_world_OdomVel_body_kf),
-  //           gnss_positions_(gnss_positions) {}
+  //           gnss_points_(gnss_points) {}
 
  public:
   const StatusStereoMeasurementsPtr status_stereo_measurements_kf_;
@@ -277,8 +277,8 @@ struct BackendInput : public PipelinePayload {
   // frame
   std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf_;
   
-  std::optional<std::vector<gtsam::Point3>> gnss_positions_;
-  // std::vector<gtsam::Point3> gnss_positions_;
+  std::optional<std::vector<GnssPoint>> gnss_points_;
+  // std::vector<gtsam::Point3> gnss_points_;
 
  public:
   void print() const {
