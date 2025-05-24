@@ -12,15 +12,12 @@
  * @author Antoni Rosinol
  */
 
- #pragma once
- 
- #include <glog/logging.h>
- 
- namespace VIO {
- 
- enum class GnssBackendModality {
-   STRUCTURELESS_WITH_GNSS = 0
- };
- 
- }  // namespace VIO
- 
+#pragma once
+
+#include <glog/logging.h>
+
+namespace VIO {
+
+enum class GnssBackendModality { STRUCTURELESS_WITH_GNSS = 0 };
+
+}  // namespace VIO
