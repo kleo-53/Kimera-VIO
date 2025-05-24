@@ -15,10 +15,11 @@
 #pragma once
 
 #include <optional>
+#include <vector>  // for vector<>
 
+#include "kimera-vio/frontend/Gnss.h"
 #include "kimera-vio/frontend/GnssTypes.h"
 #include "kimera-vio/frontend/StereoVisionImuFrontend-definitions.h"
-#include "kimera-vio/frontend/Gnss.h"
 
 namespace VIO {
 
@@ -27,10 +28,10 @@ struct GnssStereoFrontendOutput : public VIO::StereoFrontendOutput {
   KIMERA_POINTER_TYPEDEFS(GnssStereoFrontendOutput);
   KIMERA_DELETE_COPY_CONSTRUCTORS(GnssStereoFrontendOutput);
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  
-  // GnssStereoFrontendOutput(const VIO::StereoFrontendOutput::UniquePtr& output,
-    // const Gnss& gnss_points)
-    GnssStereoFrontendOutput(
+
+  // GnssStereoFrontendOutput(const VIO::StereoFrontendOutput::UniquePtr&
+  // output, const Gnss& gnss_points)
+  GnssStereoFrontendOutput(
       const bool is_keyframe,
       const StatusStereoMeasurementsPtr& status_stereo_measurements,
       const gtsam::Pose3& b_Pose_camL_rect,
@@ -42,21 +43,23 @@ struct GnssStereoFrontendOutput : public VIO::StereoFrontendOutput {
       const DebugTrackerInfo& debug_tracker_info,
       std::optional<gtsam::Pose3> lkf_body_Pose_kf_body = std::nullopt,
       std::optional<gtsam::Velocity3> body_world_Vel_body = std::nullopt,
+      std::optional<std::vector<Timestamp>> gnss_stamps = std::nullopt,
       std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt)
-      : StereoFrontendOutput(
-        is_keyframe,
-        status_stereo_measurements,
-        b_Pose_camL_rect,
-        b_Pose_camR_rect,
-        stereo_frame_lkf,
-        pim,
-        imu_acc_gyrs,
-        feature_tracks,
-        debug_tracker_info),
+      : StereoFrontendOutput(is_keyframe,
+                             status_stereo_measurements,
+                             b_Pose_camL_rect,
+                             b_Pose_camR_rect,
+                             stereo_frame_lkf,
+                             pim,
+                             imu_acc_gyrs,
+                             feature_tracks,
+                             debug_tracker_info),
+        gnss_stamps_(gnss_stamps),
         gnss_points_(gnss_points) {
-      // gnss_points_(std::move(gnss_points)) {
-        // LOG(WARNING) << "GNSS IN VIOOUTPUT " << gnss_points_.value()[0].transpose();
-      }
+    // gnss_points_(std::move(gnss_points)) {
+    // LOG(WARNING) << "GNSS IN VIOOUTPUT " <<
+    // gnss_points_.value()[0].transpose();
+  }
     // : StereoFrontendOutput(
     //   output->is_keyframe_,
     //   output->status_stereo_measurements_,
@@ -75,6 +78,7 @@ struct GnssStereoFrontendOutput : public VIO::StereoFrontendOutput {
 
  public:
   // const Gnss gnss_nav_data_;
+  std::optional<std::vector<Timestamp>> gnss_stamps_;
   std::optional<std::vector<GnssPoint>> gnss_points_;
 };
 

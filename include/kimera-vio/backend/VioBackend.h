@@ -46,8 +46,12 @@
 
 #include <fstream>
 #include <iostream>
+#include <map>  // for map<>
 #include <memory>
+#include <string>  // for string
 #include <unordered_map>
+#include <utility>  // for pair<>
+#include <vector>   // for vector<>
 
 #include "kimera-vio/backend/VioBackend-definitions.h"
 #include "kimera-vio/backend/VioBackendParams.h"
@@ -166,8 +170,19 @@ class VioBackend {
     CHECK(!backend_params_.initial_ground_truth_state_.equals(VioNavState()))
         << "Requested initialization from Ground-Truth pose but got an "
            "identity pose: did you parse your ground-truth correctly?";
-    return initStateAndSetPriors(VioNavStateTimestamped(
-        input.timestamp_, backend_params_.initial_ground_truth_state_));
+    VioNavState initial_gt = backend_params_.initial_ground_truth_state_;
+    if (input.gnss_points_ && !input.gnss_points_->empty()) {
+      // initial_gt.pose_ = input.gnss_points_->back();
+      const Eigen::Matrix<double, 3, 1>& gt_eig = input.gnss_points_->back();
+      gtsam::Point3 gnss_t(gt_eig(0), gt_eig(1), gt_eig(2));
+      LOG(INFO) << "INIT POSE: " << initial_gt.pose_;
+      const gtsam::Rot3& R = initial_gt.pose_.rotation();
+      initial_gt.pose_ = gtsam::Pose3(R, gnss_t);
+      LOG(INFO) << "GNSS POSE: " << initial_gt.pose_;
+    }
+    auto init_pose_ = initial_gt.pose_;
+    return initStateAndSetPriors(
+        VioNavStateTimestamped(input.timestamp_, std::move(initial_gt)));
   }
 
   /**
@@ -221,6 +236,7 @@ class VioBackend {
       const gtsam::PreintegrationType& pim,
       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
+      std::optional<std::vector<Timestamp>> gnss_stamps = std::nullopt,
       std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt);
 
   // Uses landmark table to add factors in graph.

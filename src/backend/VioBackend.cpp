@@ -34,6 +34,7 @@
 
 #include <limits>  // for numeric_limits<>
 #include <map>
+#include <memory>  // for make_unique<>
 #include <string>
 #include <utility>  // for make_pair
 #include <vector>
@@ -302,6 +303,7 @@ bool VioBackend::addVisualInertialStateAndOptimize(
     const gtsam::PreintegrationType& pim,
     std::optional<gtsam::Pose3> odometry_body_pose,
     std::optional<gtsam::Velocity3> odometry_vel,
+    std::optional<std::vector<Timestamp>> gnss_stamps,
     std::optional<std::vector<GnssPoint>> gnss_points) {
   debug_info_.resetAddedFactorsStatistics();
 
@@ -441,6 +443,7 @@ bool VioBackend::addVisualInertialStateAndOptimize(const BackendInput& input) {
       *input.pim_,                            // Imu preintegrated data.
       input.body_lkf_OdomPose_body_kf_,
       input.body_kf_world_OdomVel_body_kf_,
+      input.gnss_stamps_,
       input.gnss_points_);
   // Bookkeeping
   timestamp_lkf_ = input.timestamp_;
@@ -2002,7 +2005,7 @@ void VioBackend::printSmootherInfo(
     new_values_.print("new values:\n");
     // LOG(INFO) << "new_smart_factors_: "  << std::endl;
     // for (auto& s : new_smart_factors_)
-    //	s.second->print();
+    //  s.second->print();
   }
 
   LOG(INFO) << " =============== END: " << message << " =============== ";

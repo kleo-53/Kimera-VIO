@@ -25,6 +25,10 @@
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/ProjectionFactor.h>
 
+#include <map>      // for map<>
+#include <utility>  // for pair<>
+#include <vector>   // for vector<>
+
 #include "kimera-vio/factors/PointPlaneFactor.h"
 #include "kimera-vio/utils/UtilsNumerical.h"
 
@@ -153,8 +157,8 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
     const gtsam::PreintegrationType& pim,
     std::optional<gtsam::Pose3> odometry_body_pose,
     std::optional<gtsam::Velocity3> odometry_vel,
+    std::optional<std::vector<Timestamp>> gnss_stamps,
     std::optional<std::vector<GnssPoint>> gnss_points) {
-  LOG(INFO) << "IN REGULARVIOBACKEND";
   debug_info_.resetAddedFactorsStatistics();
 
   // Features and IMU line up --> do iSAM update.
@@ -217,7 +221,7 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
       VLOG(10) << "Add zero velocity and no motion factors.";
       addZeroVelocityPrior(curr_kf_id_);
       addNoMotionFactor(last_kf_id_, curr_kf_id_);
-      // TODO why are we not adding the regularities here as well...?
+      // TODO(?) why are we not adding the regularities here as well...?
       break;
     }
     default: {
@@ -279,8 +283,8 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
             break;
           }
         }
-        VLOG(10) << "Finished extracting lmk ids from set of planes, total of "
-                 << lmk_ids_with_regularity.size()
+        VLOG(10) << "Finished extracting lmk ids from "
+                 << "set of planes, total of " << lmk_ids_with_regularity.size()
                  << " lmks with regularities.";
 
         // We add features in VIO.
@@ -378,14 +382,10 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
 
   if (gnss_points && !gnss_points->empty()) {
     const gtsam::Symbol pose_key('x', curr_kf_id_);
-    // const auto& pose_estimate = smoother_->calculateEstimate<gtsam::Pose3>(pose_key).translation();
-    LOG(WARNING) << "GNSS XYZ: " << gnss_points.value()[0].transpose();
     if (odometry_body_pose) {
       const auto residual = (odometry_body_pose->translation() - (*gnss_points)[0]).transpose();
       LOG(INFO) << "Pre-opt residual (using odometry): " << residual.transpose();
     }
-    // LOG(WARNING) << "Pose XYZ: " << pose_estimate.transpose();
-    // LOG(WARNING) << "Residual: " << (pose_estimate - gnss_points.value()[0]).transpose();
     this->beforeOptimizeHook(timestamp_kf_nsec, gnss_points);
   }
 
@@ -886,7 +886,7 @@ bool RegularVioBackend::updateLmkIdIsSmart(
     const LandmarkId& lmk_id,
     const LandmarkIds& lmk_ids_with_regularity,
     LmkIdIsSmart* lmk_id_is_smart) {
-  // TODOOOOO completely change this function: it should be
+  // TODOOOOO(?) completely change this function: it should be
   // if the lmk_id is not found in is_lmk_smart
   // then add it as smart
   // else if it was smart, but now it is in regularity, add it as regularity

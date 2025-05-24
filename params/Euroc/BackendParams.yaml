@@ -90,11 +90,11 @@ useDogLeg: 0
 #   PNP = 3
 #   EXTERNAL_ODOM = 4
 pose_guess_source: 0
-mono_translation_scale_factor: 1
+mono_translation_scale_factor: 0.1
 
 # GNSS backend params
 initialGnssPoseSigma: 3.0
-gnssNoiseSigma: 2.0
+gnssNoiseSigma: 1.5
 gnssNormType: 1
-gnssNormParam: 1.5
+gnssNormParam: 3.0
 gnssBackendModality: 0

@@ -22,6 +22,10 @@
 
 #include <gtsam/slam/StereoFactor.h>
 
+#include <map>
+#include <utility>
+#include <vector>
+
 #include "kimera-vio/backend/RegularVioBackend-definitions.h"
 #include "kimera-vio/backend/RegularVioBackendParams.h"
 #include "kimera-vio/backend/VioBackend-definitions.h"
@@ -48,10 +52,14 @@ class RegularVioBackend : public VioBackend {
       const gtsam::PreintegrationType& pim,
       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
-      std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt) override;
+      std::optional<std::vector<Timestamp>> gnss_stamps = std::nullopt,
+      std::optional<std::vector<GnssPoint>> gnss_points =
+          std::nullopt) override;
 
-protected:
-    virtual void beforeOptimizeHook(const Timestamp& ts, std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt) {}
+ protected:
+  virtual void beforeOptimizeHook(
+      const Timestamp& ts,
+      std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt) {}
 
  private:
   typedef size_t Slot;
@@ -133,7 +141,7 @@ protected:
       const LandmarkIds& lmk_ids_with_regularity);
 
   /* ------------------------------------------------------------------------ */
-  virtual void deleteLmkFromExtraStructures(const LandmarkId& lmk_id) override;
+  void deleteLmkFromExtraStructures(const LandmarkId& lmk_id) override;
 
   /* ------------------------------------------------------------------------ */
   void addProjectionFactor(

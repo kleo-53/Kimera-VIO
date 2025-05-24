@@ -20,6 +20,11 @@
 #include <gtsam_unstable/nonlinear/IncrementalFixedLagSmoother.h>
 #include <gtsam_unstable/slam/SmartStereoProjectionPoseFactor.h>
 
+#include <cstdint>
+#include <map>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "kimera-vio/common/VioNavState.h"
@@ -62,7 +67,8 @@ using SmartStereoFactor = gtsam::SmartStereoProjectionPoseFactor;
 using SmartFactorParams = gtsam::SmartStereoProjectionParams;
 using LandmarkIdSmartFactorMap =
     std::unordered_map<LandmarkId, SmartStereoFactor::shared_ptr>;
-using Slot = long int;
+// using Slot = long int;
+using Slot = std::int64_t;
 using SmartFactorMap =
     gtsam::FastMap<LandmarkId, std::pair<SmartStereoFactor::shared_ptr, Slot>>;
 
@@ -237,7 +243,9 @@ struct BackendInput : public PipelinePayload {
       //! Raw imu msgs for Backend init only
       const ImuAccGyrS& imu_acc_gyrs,
       std::optional<gtsam::Pose3> body_lkf_OdomPose_body_kf = std::nullopt,
-      std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf = std::nullopt,
+      std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf =
+          std::nullopt,
+      std::optional<std::vector<Timestamp>> gnss_stamps = std::nullopt,
       std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt)
       : PipelinePayload(timestamp_kf_nsec),
         status_stereo_measurements_kf_(status_stereo_measurements_kf),
@@ -245,38 +253,18 @@ struct BackendInput : public PipelinePayload {
         imu_acc_gyrs_(imu_acc_gyrs),
         body_lkf_OdomPose_body_kf_(body_lkf_OdomPose_body_kf),
         body_kf_world_OdomVel_body_kf_(body_kf_world_OdomVel_body_kf),
-        gnss_points_(gnss_points) {
-          if (gnss_points && !gnss_points->empty()) {
-            LOG(WARNING) << "GNSS IN INPUT" << gnss_points.value()[0].transpose();
-          }
-        }
-
-  // BackendInput(
-  //         const Timestamp& timestamp_kf_nsec,
-  //         const StatusStereoMeasurementsPtr& status_stereo_measurements_kf,
-  //         const ImuFrontend::PimPtr& pim,
-  //         const ImuAccGyrS& imu_acc_gyrs,
-  //         std::optional<gtsam::Pose3> body_lkf_OdomPose_body_kf = std::nullopt,
-  //         std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf = std::nullopt,
-  //         const std::vector<gtsam::Point3>& gnss_points = {})
-  //         : PipelinePayload(timestamp_kf_nsec),
-  //           status_stereo_measurements_kf_(status_stereo_measurements_kf),
-  //           pim_(pim),
-  //           imu_acc_gyrs_(imu_acc_gyrs),
-  //           body_lkf_OdomPose_body_kf_(body_lkf_OdomPose_body_kf),
-  //           body_kf_world_OdomVel_body_kf_(body_kf_world_OdomVel_body_kf),
-  //           gnss_points_(gnss_points) {}
+        gnss_stamps_(gnss_stamps),
+        gnss_points_(gnss_points) {}
 
  public:
   const StatusStereoMeasurementsPtr status_stereo_measurements_kf_;
   ImuFrontend::PimPtr pim_;
   ImuAccGyrS imu_acc_gyrs_;
-  // between pose from last keyframe to current according to external odometry
   std::optional<gtsam::Pose3> body_lkf_OdomPose_body_kf_;
-  // velocity of the current keyframe body w.r.t. the world frame in the body
   // frame
   std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf_;
-  
+
+  std::optional<std::vector<Timestamp>> gnss_stamps_;
   std::optional<std::vector<GnssPoint>> gnss_points_;
   // std::vector<gtsam::Point3> gnss_points_;
 
@@ -372,6 +360,10 @@ struct BackendOutput : public PipelinePayload {
  * regularities derived from the 3D Mesh.
  * - kGnssStructuralRegularities: based on `regular vio`, using GNSS factor
  */
-enum class BackendType { kStereoImu = 0, kStructuralRegularities = 1, kGnssStructuralRegularities = 2 };
+enum class BackendType {
+  kStereoImu = 0,
+  kStructuralRegularities = 1,
+  kGnssStructuralRegularities = 2
+};
 
 }  // namespace VIO

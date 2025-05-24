@@ -14,9 +14,13 @@
  */
 
 #include "kimera-vio/dataprovider/DataProviderModule.h"
-#include "kimera-vio/frontend/GnssTypes.h"
+
 #include <gflags/gflags.h>
 
+#include <memory>  // for make_unique<>
+#include <string>  // for string
+
+#include "kimera-vio/frontend/GnssTypes.h"
 namespace VIO {
 
 using utils::ThreadsafeImuBuffer;
@@ -34,12 +38,10 @@ DataProviderModule::DataProviderModule(OutputQueue* output_queue,
       imu_timestamp_correction_(0),
       imu_time_shift_ns_(0),
       gnss_timestamp_correction_(0),
-      gnss_time_shift_ns_(1.08),
-      // gnss_time_shift_ns_(0.108),
+      gnss_time_shift_ns_(0),
       external_odometry_time_shift_ns_(0),
       external_odometry_buffer_(nullptr),
       gnss_data_() {
-  // TODO(nathan) replace with non-unlimited buffer size
   if (FLAGS_use_external_odometry)
     external_odometry_buffer_ = std::make_unique<ThreadsafeOdometryBuffer>(-1);
 }
@@ -119,8 +121,6 @@ DataProviderModule::getTimeSyncedImuMeasurements(const Timestamp& timestamp,
   if (do_coarse_imu_camera_temporal_sync_) {
     ImuMeasurement newest_imu;
     imu_data_.imu_buffer_.getNewestImuMeasurement(&newest_imu);
-    // this is delta = imu.timestamp - frame.timestamp so that when querying,
-    // we get query = new_frame.timestamp + delta = frame_delta + imu.timestamp
     imu_timestamp_correction_ = newest_imu.timestamp_ - timestamp;
     do_coarse_imu_camera_temporal_sync_ = false;
     LOG(WARNING) << "Computed intial coarse time alignment of "
@@ -128,18 +128,16 @@ DataProviderModule::getTimeSyncedImuMeasurements(const Timestamp& timestamp,
                  << "[s]";
   }
 
-  // imu_time_shift_ can be externally, asynchronously modified.
-  // Caching here prevents a nasty race condition and avoids locking
   const Timestamp curr_imu_time_shift = imu_time_shift_ns_;
   const Timestamp imu_timestamp_last_frame =
       timestamp_last_frame_ + imu_timestamp_correction_ + curr_imu_time_shift;
   const Timestamp imu_timestamp_curr_frame =
       timestamp + imu_timestamp_correction_ + curr_imu_time_shift;
 
-  // NOTE: using interpolation on both borders instead of just the upper 
-  // as before because without a measurement on the left-hand side we are 
-  // missing some of the motion or overestimating depending on the 
-  // last timestamp's relationship to the nearest imu timestamp. 
+  // NOTE: using interpolation on both borders instead of just the upper
+  // as before because without a measurement on the left-hand side we are
+  // missing some of the motion or overestimating depending on the
+  // last timestamp's relationship to the nearest imu timestamp.
   // For some datasets this caused an incorrect motion estimate
   ThreadsafeImuBuffer::QueryResult query_result =
       imu_data_.imu_buffer_.getImuDataInterpolatedBorders(
@@ -200,8 +198,7 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
       << "[s] (curr)";
 
   if (gnss_data_.gnss_buffer_.size() == 0) {
-    // VLOG(1) << "No GNSS measurements available yet, dropping this frame.";
-    LOG(WARNING) << "No GNSS measurements available yet, dropping this frame.";
+    VLOG(1) << "No GNSS measurements available yet, dropping this frame.";
     return FrameAction::Drop;
   }
 
@@ -217,9 +214,6 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
   if (do_coarse_gnss_camera_temporal_sync_) {
     GnssMeasurement newest_gnss;
     gnss_data_.gnss_buffer_.getNewestGnssMeasurement(&newest_gnss);
-    // gnss_data_.gnss_buffer_.getNearest()
-    // this is delta = imu.timestamp - frame.timestamp so that when querying,
-    // we get query = new_frame.timestamp + delta = frame_delta + imu.timestamp
     gnss_timestamp_correction_ = newest_gnss.timestamp_ - timestamp;
     do_coarse_gnss_camera_temporal_sync_ = false;
     LOG(WARNING) << "Computed intial coarse time alignment of "
@@ -232,54 +226,30 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
   const Timestamp gnss_timestamp_curr_frame =
       timestamp + gnss_timestamp_correction_ + curr_gnss_time_shift;
   if (gnss_params.period_ != -1) {
-    query_result = 
-    gnss_data_.gnss_buffer_.getInterpolatedValueWithFixedPeriod(
-      gnss_timestamp_curr_frame,
-      gnss_params.period_,
-      &gnss_meas->timestamps_,
-      &gnss_meas->points_);
+    query_result =
+        gnss_data_.gnss_buffer_.getNearestGnssData(gnss_timestamp_curr_frame,
+                                                   &gnss_meas->timestamps_,
+                                                   &gnss_meas->points_);
+    // gnss_data_.gnss_buffer_.getInterpolatedValueWithFixedPeriod(
+    //   gnss_timestamp_curr_frame,
+    //   gnss_params.period_,
+    //   &gnss_meas->timestamps_,
+    //   &gnss_meas->points_);
   } else {
-  const Timestamp gnss_timestamp_last_frame =
-      timestamp_last_frame_ + gnss_timestamp_correction_ + curr_gnss_time_shift;
+    const Timestamp gnss_timestamp_last_frame = timestamp_last_frame_ +
+                                                gnss_timestamp_correction_ +
+                                                curr_gnss_time_shift;
 
-  // NOTE: using interpolation on both borders instead of just the upper 
-  // as before because without a measurement on the left-hand side we are 
-  // missing some of the motion or overestimating depending on the 
-  // last timestamp's relationship to the nearest imu timestamp. 
-  // For some datasets this caused an incorrect motion estimate
+    query_result = gnss_data_.gnss_buffer_.getGnssDataInterpolatedBorders(
+        gnss_timestamp_last_frame,
+        gnss_timestamp_curr_frame,
+        &gnss_meas->timestamps_,
+        &gnss_meas->points_);
+  }
 
-  // TOD: было так, но я хочу полегковеснее gnss buffer сделать
-  query_result =
-      gnss_data_.gnss_buffer_.getGnssDataInterpolatedBorders(
-          gnss_timestamp_last_frame,
-          gnss_timestamp_curr_frame,
-          &gnss_meas->timestamps_,
-          &gnss_meas->points_); //,
-      }
-
-
-
-          // &imu_meas->acc_gyr_);
-  // logQueryResult(timestamp, query_result);
-  LOG(INFO) << "Query GNSS at " << gnss_timestamp_curr_frame;
-  // LOG(INFO) << "GNSS time shift: " << gnss_time_shift_ns_;
-  // LOG(INFO) << "GNSS interpolation result: " << static_cast<int>(query_result);
-  // LOG(INFO) << "GNSS timestamps size: " << gnss_meas->timestamps_.cols();
-  // LOG(INFO) << "GNSS poses size: " << gnss_meas->points_.cols();
-
-  // for (int i = 0; i < gnss_meas->timestamps_.cols(); ++i) {
-  //   LOG(INFO) << "GNSS @ " << gnss_meas->timestamps_(0, i) << ": "
-  //             << gnss_meas->points_.col(i).transpose();
-  // }
-  // ThreadsafeGnssBuffer::QueryResult query_result = 
-  //   gnss_data_.gnss_buffer_.getNearest(
-  //     gnss_timestamp_curr_frame
-  //   );
-
-  // auto query_result = ThreadsafeGnssBuffer::QueryResult::kDataNeverAvailable;
   switch (query_result) {
     case ThreadsafeGnssBuffer::QueryResult::kDataAvailable:
-      break;  // handle this below
+      break;
     case ThreadsafeGnssBuffer::QueryResult::kDataNotYetAvailable:
       return FrameAction::Wait;
     case ThreadsafeGnssBuffer::QueryResult::kQueueShutdown:
@@ -291,7 +261,6 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
     case ThreadsafeGnssBuffer::QueryResult::kTooFewMeasurementsAvailable:
     default:
       LOG(WARNING) << "GNSS data unavailable, continuing without GNSS.";
-      // break;
       return FrameAction::Drop;
   }
   if (gnss_meas->timestamps_.cols() == 0 || gnss_meas->points_.cols() == 0) {
@@ -307,8 +276,6 @@ DataProviderModule::getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
            << gnss_meas->timestamps_.cols() << '\n'
            << "STAMPS GNSS: \n"
            << gnss_meas->timestamps_;
-          //  << "ACCGYR IMU rows : \n"
-          //  << imu_meas->acc_gyr_;
   return FrameAction::Use;
 }
 

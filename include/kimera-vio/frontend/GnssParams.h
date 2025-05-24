@@ -16,6 +16,8 @@
 
 #include <gtsam/base/Vector.h>
 
+#include <string>
+
 #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 #include "kimera-vio/pipeline/PipelineParams.h"
 #include "kimera-vio/utils/Macros.h"
@@ -38,12 +40,9 @@ struct GnssParams : public PipelineParams {
   bool equals(const PipelineParams& obj) const override;
 
  public:
-  double noise_ = 0.0;
   double timestamp_ = 0;
   Timestamp period_ = 0;
   size_t gnss_period_estimation_window_ = 50;
-
-  // double nominal_sampling_time_s_ = 0.0;
   gtsam::Pose3 b_pose_gnss_ = gtsam::Pose3::Identity();
 };
 
