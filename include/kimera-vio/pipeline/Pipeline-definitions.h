@@ -16,17 +16,19 @@
 
 #include <gflags/gflags.h>
 
+#include <string>  // for string
+
 #include "kimera-vio/backend/RegularVioBackendParams.h"
 #include "kimera-vio/backend/VioBackend-definitions.h"
 #include "kimera-vio/backend/VioBackendParams.h"
 #include "kimera-vio/frontend/CameraParams.h"
 #include "kimera-vio/frontend/GnssParams.h"
+#include "kimera-vio/frontend/OdometryParams.h"
 #include "kimera-vio/frontend/VisionImuFrontend-definitions.h"
 #include "kimera-vio/frontend/VisionImuFrontendParams.h"
 #include "kimera-vio/imu-frontend/ImuFrontendParams.h"
 #include "kimera-vio/loopclosure/LoopClosureDetectorParams.h"
 #include "kimera-vio/visualizer/DisplayParams.h"
-#include "kimera-vio/frontend/OdometryParams.h"
 
 DECLARE_bool(use_external_odometry);
 
@@ -82,25 +84,25 @@ struct VioParams : public PipelineParams {
    * where folder_path is the path to the folder containing all the YAML params.
    *
    * @param params_folder_path A path to the folder containing YAML files below.
-   * @param pipeline_params_filename Pipeline params YAML file name.
-   * @param imu_params_filename IMU params YAML file name.
-   * @param left_camera_params_filename  Left Camera params YAML file name.
-   * @param right_camera_params_filename Right Camera params YAML file name.
-   * @param frontend_params_filename Frontend params YAML file name.
-   * @param backend_params_filename Backend params YAML file name.
-   * @param lcd_params_filename Loop closure params YAML file name.
-   * @param display_params_filename Display params YAML file name.
+   * @param pipeline_params_filepath Pipeline params YAML file name.
+   * @param imu_params_filepath IMU params YAML file name.
+   * @param left_camera_params_filepath  Left Camera params YAML file name.
+   * @param right_camera_params_filepath Right Camera params YAML file name.
+   * @param frontend_params_filepath Frontend params YAML file name.
+   * @param backend_params_filepath Backend params YAML file name.
+   * @param lcd_params_filepath Loop closure params YAML file name.
+   * @param display_params_filepath Display params YAML file name.
    */
   VioParams(const std::string& params_folder_path,
-            const std::string& pipeline_params_filename,
-            const std::string& imu_params_filename,
-            const std::string& left_cam_params_filename,
-            const std::string& right_cam_params_filename,
-            const std::string& frontend_params_filename,
-            const std::string& backend_params_filename,
-            const std::string& lcd_params_filename,
-            const std::string& display_params_filename,
-            const std::string& gnss_params_filename);
+            const std::string& pipeline_params_filepath,
+            const std::string& imu_params_filepath,
+            const std::string& left_cam_params_filepath,
+            const std::string& right_cam_params_filepath,
+            const std::string& frontend_params_filepath,
+            const std::string& backend_params_filepath,
+            const std::string& lcd_params_filepath,
+            const std::string& display_params_filepath,
+            const std::string& gnss_params_filepath);
   virtual ~VioParams() = default;
 
   /**
@@ -174,15 +176,15 @@ struct VioParams : public PipelineParams {
   }
 
   //! Names of the YAML files with the parameters.
-  std::string pipeline_params_filename_;
-  std::string imu_params_filename_;
-  std::string left_cam_params_filename_;
-  std::string right_cam_params_filename_;
-  std::string frontend_params_filename_;
-  std::string backend_params_filename_;
-  std::string lcd_params_filename_;
-  std::string display_params_filename_;
-  std::string gnss_params_filename_;
+  std::string pipeline_params_filepath_;
+  std::string imu_params_filepath_;
+  std::string left_cam_params_filepath_;
+  std::string right_cam_params_filepath_;
+  std::string frontend_params_filepath_;
+  std::string backend_params_filepath_;
+  std::string lcd_params_filepath_;
+  std::string display_params_filepath_;
+  std::string gnss_params_filepath_;
 };
 
 //! Callback called when the VIO pipeline has shut down.

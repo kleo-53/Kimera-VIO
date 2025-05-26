@@ -9,7 +9,7 @@
 /**
  * @file   ImuFrontend.h
  * @brief  Class managing sequences of IMU measurements.
- * @author Antoni Rosinol, Luca Carlone
+ * @author Antoni Rosinol, Luca Carlone, Elizaveta Karaseva
  */
 
 #pragma once
@@ -23,62 +23,34 @@
 
 #include <Eigen/Dense>
 #include <map>
+#include <memory>  // for unique_ptr
 #include <mutex>
 #include <string>
 #include <thread>
 #include <tuple>
 #include <utility>
 
-#include "kimera-vio/frontend/GnssTypes.h"
 #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 #include "kimera-vio/imu-frontend/ImuFrontendParams.h"
 #include "kimera-vio/utils/Macros.h"
 #include "kimera-vio/utils/ThreadsafeGnssBuffer.h"
 #include "kimera-vio/utils/ThreadsafeImuBuffer.h"
-// #include "kimera-vio/utils/ThreadsafeGnssBuffer.h"
-// namespace VIO {
-//   namespace utils {
-//   class ThreadsafeGnssBuffer;
-//   } // namespace utils
-  // }
 
 namespace VIO {
 
-  // class GnssData {
-  //   public:
-  //    KIMERA_POINTER_TYPEDEFS(GnssData);
-  //    KIMERA_DELETE_COPY_CONSTRUCTORS(GnssData);
-  //    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-   
-  //    GnssData() : gnss_buffer_(-1) {}
-   
-  //    utils::ThreadsafeGnssBuffer gnss_buffer_;
-  //  };
+class GnssData {
+ public:
+  KIMERA_POINTER_TYPEDEFS(GnssData);
+  KIMERA_DELETE_COPY_CONSTRUCTORS(GnssData);
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  class GnssData {
-    public:
-     KIMERA_POINTER_TYPEDEFS(GnssData);
-     KIMERA_DELETE_COPY_CONSTRUCTORS(GnssData);
-     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-   
-     // Imu buffer with virtually infinite memory.
-     GnssData() : gnss_buffer_(-1) {}
-    // GnssData() : gnss_buffer_(std::make_unique<utils::ThreadsafeGnssBuffer>(-1)) {}
-   
-     // Checks for statistics..
-     // TODO(Toni): remove these and put in params.
-    //  double imu_rate_;
-    //  double nominal_imu_rate_;
-     double aaaaa;
-   
-     // Gnss data.
-     utils::ThreadsafeGnssBuffer gnss_buffer_;
-    // std::unique_ptr<utils::ThreadsafeGnssBuffer> gnss_buffer_;
+  // Imu buffer with virtually infinite memory.
+  GnssData() : gnss_buffer_(-1) {}
+  double aaaaa;
 
-    // public:
-    //  void print() const;
-   };
-  
+  // Gnss data.
+  utils::ThreadsafeGnssBuffer gnss_buffer_;
+};
 
 class ImuData {
  public:

@@ -55,7 +55,7 @@ GnssStereoVisionImuFrontend::GnssStereoVisionImuFrontend(
       stereo_camera_(stereo_camera),
       stereo_matcher_(stereo_camera, frontend_params.stereo_matching_params_),
       output_images_path_("./outputImages/"),
-      gnss_points_() {
+      gnss_point_() {
   CHECK(stereo_camera_);
 
   feature_detector_ = std::make_unique<FeatureDetector>(
@@ -96,31 +96,10 @@ GnssStereoVisionImuFrontend::bootstrapSpinStereo(
     return nullptr;  // skip adding a frame to all downstream modules
   }
 
-  std::optional<std::vector<GnssPoint>> gnss_points_optional = std::nullopt;
-  const GnssPointS& gnss_points_matrix = input->getGnssPoints();
-  if (gnss_points_matrix.size() != 0) {
-    gnss_points_optional.emplace([&]() {
-      std::vector<GnssPoint> vec;
-      vec.reserve(gnss_points_matrix.cols());
-      for (int i = 0; i < gnss_points_matrix.cols(); ++i) {
-        vec.emplace_back(gnss_points_matrix.col(i));
-      }
-      return vec;
-    }());
-  }
-
-  const auto& gnss_timestamps_matrix = input->getGnssStamps();
-  std::optional<std::vector<Timestamp>> gnss_timestamps_optional = std::nullopt;
-
-  if (gnss_timestamps_matrix.size() != 0) {
-    gnss_timestamps_optional.emplace([&]() {
-      std::vector<Timestamp> vec;
-      vec.reserve(gnss_timestamps_matrix.size());
-      for (int i = 0; i < gnss_timestamps_matrix.size(); ++i) {
-        vec.emplace_back(gnss_timestamps_matrix[i]);
-      }
-      return vec;
-    }());
+  std::optional<GnssPoint> gnss_point_optional = std::nullopt;
+  const GnssPoint& gnss_point = input->getGnssPoint();
+  if (gnss_point.norm() > 0.0) {
+    gnss_point_optional.emplace(gnss_point);
   }
 
   return std::make_unique<GnssStereoFrontendOutput>(
@@ -135,8 +114,8 @@ GnssStereoVisionImuFrontend::bootstrapSpinStereo(
       getTrackerInfo(),
       std::nullopt,  // lkf_body_Pose_kf_body
       std::nullopt,  // velocity
-      gnss_timestamps_optional,
-      gnss_points_optional);
+      // gnss_timestamp_optional,
+      gnss_point_optional);
 }
 
 GnssStereoFrontendOutput::UniquePtr
@@ -212,32 +191,18 @@ GnssStereoVisionImuFrontend::nominalSpinStereo(
     GnssStereoVisionImuFrontend::printStatusStereoMeasurements(
         *status_stereo_measurements);
 
-  std::optional<std::vector<GnssPoint>> gnss_points_optional = std::nullopt;
-  const GnssPointS& gnss_points_matrix = input->getGnssPoints();
-  if (gnss_points_matrix.size() != 0) {
-    gnss_points_optional.emplace([&]() {
-      std::vector<GnssPoint> vec;
-      vec.reserve(gnss_points_matrix.cols());
-      for (int i = 0; i < gnss_points_matrix.cols(); ++i) {
-        vec.emplace_back(gnss_points_matrix.col(i));
-      }
-      return vec;
-    }());
+  std::optional<GnssPoint> gnss_point_optional = std::nullopt;
+  const GnssPoint& gnss_point = input->getGnssPoint();
+  if (gnss_point.norm() > 0.0) {
+    gnss_point_optional.emplace(gnss_point);
   }
 
-  const auto& gnss_timestamps_matrix = input->getGnssStamps();
-  std::optional<std::vector<Timestamp>> gnss_timestamps_optional = std::nullopt;
+  // const Timestamp& gnss_timestamp = input->getGnssStamp();
+  // std::optional<Timestamp> gnss_timestamp_optional = std::nullopt;
 
-  if (gnss_timestamps_matrix.size() != 0) {
-    gnss_timestamps_optional.emplace([&]() {
-      std::vector<Timestamp> vec;
-      vec.reserve(gnss_timestamps_matrix.size());
-      for (int i = 0; i < gnss_timestamps_matrix.size(); ++i) {
-        vec.emplace_back(gnss_timestamps_matrix[i]);
-      }
-      return vec;
-    }());
-  }
+  // if (gnss_timestamp != 0) {
+  //   gnss_timestamp_optional.emplace(gnss_timestamp);
+  // }
 
   if (stereoFrame_km1_->isKeyframe()) {
     // We got a keyframe!
@@ -286,8 +251,8 @@ GnssStereoVisionImuFrontend::nominalSpinStereo(
         getTrackerInfo(),
         getExternalOdometryRelativeBodyPose(input.get()),
         getExternalOdometryWorldVelocity(input.get()),
-        gnss_timestamps_optional,
-        gnss_points_optional);
+        // gnss_timestamp_optional,
+        gnss_point_optional);
   } else {
     // Record frame rate timing
     timing_stats_frame_rate.AddSample(utils::Timer::toc(start_time).count());
@@ -305,8 +270,8 @@ GnssStereoVisionImuFrontend::nominalSpinStereo(
         getTrackerInfo(),
         std::nullopt,  // lkf_body_Pose_kf_body
         std::nullopt,  // velocity
-        gnss_timestamps_optional,
-        gnss_points_optional);
+        // gnss_timestamp_optional,
+        gnss_point_optional);
   }
 }
 

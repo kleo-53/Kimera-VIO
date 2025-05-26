@@ -10,6 +10,7 @@
  * @file   FrontendType
  * @brief  Frontend type enum definition
  * @author Marcus Abate
+ * @author Elizaveta Karaseva
  */
 
 #pragma once
@@ -23,6 +24,7 @@ enum class FrontendType {
   kStereoImu = 1,
   //! Frontend that works with RGB + Depth camera and Imu
   kRgbdImu = 2,
+  //! Frontend that works with Gnss, Stereo camera and Imu
   kGnssStereoImu = 3,
   //! Placeholder for parsing
   kUnknown = 4,

@@ -8,8 +8,8 @@
 
 /**
  * @file   GnssParams.cpp
- * @brief  Params for GnssFrontend.
- * @author Igor Lovets
+ * @brief  Params for GnssStereoVisionImuFrontend.
+ * @author Elizaveta Karaseva
  */
 
 #include "kimera-vio/frontend/GnssParams.h"
@@ -40,13 +40,6 @@ bool GnssParams::parseYAML(const std::string& filepath) {
   yaml_parser.getNestedYamlParam("T_BS", "data", &vector_pose);
   b_pose_gnss_ = UtilsOpenCV::poseVectorToGtsamPose3(vector_pose);
   yaml_parser.getYamlParam("timestamp", &timestamp_);
-  int window_tmp = 0;
-  yaml_parser.getYamlParam("gnss_period_estimation_window", &window_tmp);
-  gnss_period_estimation_window_ = static_cast<size_t>(window_tmp);
-  std::string per;
-  yaml_parser.getYamlParam("period", &per);
-  period_ = std::stol(per);
-
   return true;
 }
 
@@ -60,10 +53,7 @@ bool GnssParams::equals(const PipelineParams& obj) const {
   const auto& rhs = static_cast<const GnssParams&>(obj);
   // clang-format off
   return b_pose_gnss_.equals(rhs.b_pose_gnss_) &&
-      timestamp_ == rhs.timestamp_ &&
-      // noise_ == rhs.noise_ &&
-      period_ == rhs.period_ &&
-      gnss_period_estimation_window_ == rhs.gnss_period_estimation_window_;
+      timestamp_ == rhs.timestamp_;
 }
 
 }  // namespace VIO

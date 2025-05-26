@@ -7,22 +7,21 @@
  * -------------------------------------------------------------------------- */
 
 /**
- * @file   RegularVioBackend.h
- * @brief  Derived class from VioBackend which enforces regularity constraints
- * on the factor graph.
+ * @file   GnssVioBackend.h
+ * @brief  Derived class from RegularVioBackend which uses gnss factors
+ * in vio factor graph.
  *
  * A. Rosinol, T. Sattler, M. Pollefeys, and L. Carlone. Incremental
  * Visual-Inertial 3D Mesh Generation with Structural Regularities. IEEE Intl.
  * Conf. on Robotics and Automation (ICRA), 2019
  *
- * @author Toni Rosinol
+ * @author Elizaveta Karaseva
  */
 
 #pragma once
 
 #include <vector>
 
-#include "kimera-vio/backend/GnssVioBackend-definitions.h"
 #include "kimera-vio/backend/GnssVioBackendParams.h"
 #include "kimera-vio/backend/RegularVioBackend.h"
 #include "kimera-vio/frontend/Gnss.h"
@@ -41,9 +40,9 @@ class GnssVioBackend : public RegularVioBackend {
 
   virtual ~GnssVioBackend() = default;
 
-  void beforeOptimizeHook(const Timestamp& ts,
-                          std::optional<std::vector<GnssPoint>> gnss_points =
-                              std::nullopt) override;
+  void beforeOptimizeHook(
+      const Timestamp& ts,
+      std::optional<GnssPoint> gnss_point = std::nullopt) override;
 
  private:
   const GnssVioBackendParams gnss_vio_params_;
@@ -58,10 +57,9 @@ class GnssVioBackend : public RegularVioBackend {
     const size_t& norm_type,
     const double& norm_type_parameter);
 
-  void addGnssFactor(
-      const FrameId& frame_id,
-      const GnssPoint& gnss_point,
-      gtsam::NonlinearFactorGraph* graph);
+  void addGnssFactor(const FrameId& frame_id,
+                     const GnssPoint& gnss_point,
+                     gtsam::NonlinearFactorGraph* graph);
 };
 
 }  // namespace VIO

@@ -16,6 +16,7 @@
  * output_queue is unused-- the resulting bundle (IMU + stereo, called a
  *          StereoImuSyncPacket) is published via registerVioPipelineCallback.
  * @author Antoni Rosinol
+ * @author Elizaveta Karaseva
  */
 
 #pragma once
@@ -35,7 +36,6 @@
 #include "kimera-vio/pipeline/PipelineModule.h"
 #include "kimera-vio/utils/Macros.h"
 #include "kimera-vio/utils/ThreadsafeOdometryBuffer.h"
-// #include "kimera-vio/utils/ThreadsafeGnssBuffer.h"
 #include "kimera-vio/utils/UtilsNumerical.h"
 
 namespace VIO {
@@ -80,13 +80,8 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
   }
 
   inline void fillGnssQueue(const GnssMeasurement& gnss_meas) {
-    // CHECK(gnss_data);
-    // gnss_data_.gnss_buffer_.addMeasurement(gnss_meas.timestamp_ - gnss_time_shift_ns_, gnss_meas);
-    // LOG(INFO) << "gnss_time_shift_ns_: " << gnss_time_shift_ns_;
-    const Timestamp corrected_timestamp =
-        gnss_meas.timestamp_;
-    // LOG(INFO) << "GNSS ADDED TO BUFFER: " << corrected_timestamp;
-    gnss_data_.gnss_buffer_.addMeasurement(corrected_timestamp, gnss_meas.point_);
+    gnss_data_.gnss_buffer_.addMeasurement(gnss_meas.timestamp_,
+                                           gnss_meas.point_);
   }
 
   // TODO(Toni): remove, register at ctor level.
@@ -182,9 +177,9 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
   FrameAction getTimeSyncedImuMeasurements(const Timestamp& timestamp,
                                            ImuMeasurements* imu_meas);
 
-  FrameAction getTimeSyncedGnssMeasurements(const Timestamp& timestamp,
+  FrameAction getTimeSyncedGnssMeasurement(const Timestamp& timestamp,
                                            const GnssParams& gnss_params,
-                                           GnssMeasurements* gnss_meas);
+                                           GnssMeasurement* gnss_meas);
 
   void logQueryResult(const Timestamp& timestamp,
                       utils::ThreadsafeImuBuffer::QueryResult result) const;
@@ -204,7 +199,7 @@ class DataProviderModule : public MISOPipelineModule<FrontendInputPacketBase,
   std::atomic<Timestamp> imu_time_shift_ns_;  // t_imu = t_cam + imu_shift
   Timestamp gnss_timestamp_correction_;
   std::atomic<Timestamp> gnss_time_shift_ns_;
-  
+
   PipelineOutputCallback vio_pipeline_callback_;
   //! External odometry source
   std::atomic<Timestamp> external_odometry_time_shift_ns_;

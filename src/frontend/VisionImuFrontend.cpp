@@ -14,6 +14,11 @@
 
 #include "kimera-vio/frontend/VisionImuFrontend.h"
 
+#include <memory>   // for make_unique
+#include <string>   // for string
+#include <utility>  // for move
+#include <vector>   // for vector
+
 #include "kimera-vio/initial/CrossCorrTimeAligner.h"
 #include "kimera-vio/utils/UtilsNumerical.h"
 
@@ -24,8 +29,7 @@ VisionImuFrontend::VisionImuFrontend(const ImuParams& imu_params,
                                      const FrontendParams& frontend_params,
                                      DisplayQueue* display_queue,
                                      bool log_output,
-                                     std::optional<OdometryParams> odom_params)//,
-                                    //  std::optional<GnssParams> gnss_params)
+                                     std::optional<OdometryParams> odom_params)
     : frontend_params_(frontend_params),
       frontend_state_(FrontendState::Bootstrap),
       frame_count_(0),
@@ -36,8 +40,7 @@ VisionImuFrontend::VisionImuFrontend(const ImuParams& imu_params,
       tracker_status_summary_(),
       display_queue_(display_queue),
       logger_(nullptr),
-      odom_params_(odom_params){//,
-      // gnss_params_(gnss_params) {
+      odom_params_(odom_params) {
   imu_frontend_ = std::make_unique<ImuFrontend>(imu_params, imu_initial_bias);
   if (log_output) {
     logger_ = std::make_unique<FrontendLogger>();

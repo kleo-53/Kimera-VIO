@@ -8,8 +8,8 @@
 
 /**
  * @file   GnssStereoVisionImuFrontend-definitions.h
- * @brief  Definitions for StereoVisionImuFrontend
- * @author Antoni Rosinol
+ * @brief  Definitions for GnssStereoVisionImuFrontend
+ * @author Elizaveta Karaseva
  */
 
 #pragma once
@@ -18,7 +18,6 @@
 #include <vector>  // for vector<>
 
 #include "kimera-vio/frontend/Gnss.h"
-#include "kimera-vio/frontend/GnssTypes.h"
 #include "kimera-vio/frontend/StereoVisionImuFrontend-definitions.h"
 
 namespace VIO {
@@ -29,8 +28,6 @@ struct GnssStereoFrontendOutput : public VIO::StereoFrontendOutput {
   KIMERA_DELETE_COPY_CONSTRUCTORS(GnssStereoFrontendOutput);
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  // GnssStereoFrontendOutput(const VIO::StereoFrontendOutput::UniquePtr&
-  // output, const Gnss& gnss_points)
   GnssStereoFrontendOutput(
       const bool is_keyframe,
       const StatusStereoMeasurementsPtr& status_stereo_measurements,
@@ -43,8 +40,7 @@ struct GnssStereoFrontendOutput : public VIO::StereoFrontendOutput {
       const DebugTrackerInfo& debug_tracker_info,
       std::optional<gtsam::Pose3> lkf_body_Pose_kf_body = std::nullopt,
       std::optional<gtsam::Velocity3> body_world_Vel_body = std::nullopt,
-      std::optional<std::vector<Timestamp>> gnss_stamps = std::nullopt,
-      std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt)
+      std::optional<GnssPoint> gnss_point = std::nullopt)
       : StereoFrontendOutput(is_keyframe,
                              status_stereo_measurements,
                              b_Pose_camL_rect,
@@ -54,32 +50,12 @@ struct GnssStereoFrontendOutput : public VIO::StereoFrontendOutput {
                              imu_acc_gyrs,
                              feature_tracks,
                              debug_tracker_info),
-        gnss_stamps_(gnss_stamps),
-        gnss_points_(gnss_points) {
-    // gnss_points_(std::move(gnss_points)) {
-    // LOG(WARNING) << "GNSS IN VIOOUTPUT " <<
-    // gnss_points_.value()[0].transpose();
-  }
-    // : StereoFrontendOutput(
-    //   output->is_keyframe_,
-    //   output->status_stereo_measurements_,
-    //   output->b_Pose_camL_rect_,
-    //   output->b_Pose_camR_rect_,
-    //   output->stereo_frame_lkf_,
-    //   output->pim_,
-    //   output->imu_acc_gyrs_,
-    //   output->feature_tracks_,
-    //   output->debug_tracker_info_),
-    //   // output->lkf_body_Pose_kf_body_,
-    //   // output->debug_tracker_info_),
-    //   gnss_points_(gnss_points) {}
+        gnss_point_(gnss_point) {}
 
   virtual ~GnssStereoFrontendOutput() = default;
 
  public:
-  // const Gnss gnss_nav_data_;
-  std::optional<std::vector<Timestamp>> gnss_stamps_;
-  std::optional<std::vector<GnssPoint>> gnss_points_;
+  std::optional<GnssPoint> gnss_point_;
 };
 
 }  // namespace VIO

@@ -7,15 +7,15 @@
  * -------------------------------------------------------------------------- */
 
 /**
- * @file   RegularVioBackend.h
- * @brief  Derived class from VioBackend which enforces regularity constraints
- * on the factor graph.
+ * @file   GnssVioBackend.h
+ * @brief  Derived class from RegularVioBackend which uses gnss factors
+ * in vio factor graph.
  *
  * A. Rosinol, T. Sattler, M. Pollefeys, and L. Carlone. Incremental
  * Visual-Inertial 3D Mesh Generation with Structural Regularities. IEEE Intl.
  * Conf. on Robotics and Automation (ICRA), 2019
  *
- * @author Antoni Rosinol
+ * @author Elizaveta Karaseva
  */
 
 #include "kimera-vio/backend/GnssVioBackend.h"
@@ -50,79 +50,67 @@ GnssVioBackend::GnssVioBackend(const Pose3& B_Pose_leftCamRect,
                  gnss_vio_params_.gnssNormParam_);
 }
 
-void GnssVioBackend::beforeOptimizeHook(
-    const Timestamp& ts,
-    std::optional<std::vector<GnssPoint>> gnss_points) {
-  if (!gnss_points || gnss_points->empty()) return;
+void GnssVioBackend::beforeOptimizeHook(const Timestamp& ts,
+                                        std::optional<GnssPoint> gnss_point) {
+  if (!gnss_point.has_value()) return;
 
-  LOG(INFO) << "SIZE OF GNSS POINTS: " << gnss_points->size();
-  GnssPoint mean_gnss = gnss_points->back();
-
-  addGnssFactor(curr_kf_id_, mean_gnss, &new_imu_prior_and_other_factors_);
-  LOG(WARNING) << "Added GNSS" << mean_gnss.transpose() << " to keyframe "
+  addGnssFactor(curr_kf_id_, *gnss_point, &new_imu_prior_and_other_factors_);
+  LOG(WARNING) << "Added GNSS" << (*gnss_point).transpose() << " to keyframe "
                << curr_kf_id_ << " ts: " << ts;
-
-  // BAD
-  // for (const auto& gnss : *gnss_points) {
-  //   addGnssFactor(curr_kf_id_, gnss, &new_imu_prior_and_other_factors_);
-  //   LOG(INFO) << "Added GNSS factor to keyframe " << curr_kf_id_;
-  // }
 }
 
-  void GnssVioBackend::addGnssFactor(
-      const FrameId& frame_id,
-      const GnssPoint& gnss_point,
-      gtsam::NonlinearFactorGraph* graph) {
-    CHECK_NOTNULL(graph);
-    const gtsam::Symbol pose_key('x', frame_id);
-    graph->add(gtsam::GnssFactor(pose_key, gnss_point, gnss_noise_));
-  }
+void GnssVioBackend::addGnssFactor(const FrameId& frame_id,
+                                   const GnssPoint& gnss_point,
+                                   gtsam::NonlinearFactorGraph* graph) {
+  CHECK_NOTNULL(graph);
+  const gtsam::Symbol pose_key('x', frame_id);
+  graph->add(gtsam::GnssFactor(pose_key, gnss_point, gnss_noise_));
+}
 
-  /* --------------------------------------------------------------------------
-   */
-  // Output a noise model with a selected norm type:
-  // norm_type = 0: l-2.
-  // norm_type = 1: Huber.
-  // norm_type = 2: Tukey.
-  void GnssVioBackend::selectNormType(
-      gtsam::SharedNoiseModel* noise_model_output,
-      const gtsam::SharedNoiseModel& noise_model_input,
-      const size_t& norm_type,
-      const double& norm_type_parameter) {
-    CHECK_NOTNULL(noise_model_output);
-    switch (norm_type) {
-      case 0: {
-        VLOG(1) << "Using l-2 norm.";
-        *noise_model_output = noise_model_input;
-        break;
-      }
-      case 1: {
-        VLOG(1) << "Using Huber norm, with parameter value: "
-                << norm_type_parameter;
-        *noise_model_output = gtsam::noiseModel::Robust::Create(
-            gtsam::noiseModel::mEstimator::Huber::Create(
-                norm_type_parameter,
-                gtsam::noiseModel::mEstimator::Huber::Scalar),  // Default is
-                                                                // Block
-            noise_model_input);
-        break;
-      }
-      case 2: {
-        VLOG(1) << "Using Tukey norm, with parameter value: "
-                << norm_type_parameter;
-        *noise_model_output = gtsam::noiseModel::Robust::Create(
-            gtsam::noiseModel::mEstimator::Tukey::Create(
-                norm_type_parameter,
-                gtsam::noiseModel::mEstimator::Tukey::Scalar),  // Default is
-                                                                // Block
-            noise_model_input);                                 // robust
-        break;
-      }
-      default: {
-        LOG(ERROR) << "Wrong norm_type passed...";
-        break;
-      }
+/* ------------------------------------------------------------------------*/
+// Output a noise model with a selected norm type:
+// norm_type = 0: l-2.
+// norm_type = 1: Huber.
+// norm_type = 2: Tukey.
+void GnssVioBackend::selectNormType(
+    gtsam::SharedNoiseModel* noise_model_output,
+    const gtsam::SharedNoiseModel& noise_model_input,
+    const size_t& norm_type,
+    const double& norm_type_parameter) {
+  CHECK_NOTNULL(noise_model_output);
+  switch (norm_type) {
+    case 0: {
+      VLOG(1) << "Using l-2 norm.";
+      *noise_model_output = noise_model_input;
+      break;
+    }
+    case 1: {
+      VLOG(1) << "Using Huber norm, with parameter value: "
+              << norm_type_parameter;
+      *noise_model_output = gtsam::noiseModel::Robust::Create(
+          gtsam::noiseModel::mEstimator::Huber::Create(
+              norm_type_parameter,
+              gtsam::noiseModel::mEstimator::Huber::Scalar),  // Default is
+                                                              // Block
+          noise_model_input);
+      break;
+    }
+    case 2: {
+      VLOG(1) << "Using Tukey norm, with parameter value: "
+              << norm_type_parameter;
+      *noise_model_output = gtsam::noiseModel::Robust::Create(
+          gtsam::noiseModel::mEstimator::Tukey::Create(
+              norm_type_parameter,
+              gtsam::noiseModel::mEstimator::Tukey::Scalar),  // Default is
+                                                              // Block
+          noise_model_input);                                 // robust
+      break;
+    }
+    default: {
+      LOG(ERROR) << "Wrong norm_type passed...";
+      break;
     }
   }
+}
 
-  }  // namespace VIO
+}  // namespace VIO

@@ -97,4 +97,3 @@ initialGnssPoseSigma: 3.0
 gnssNoiseSigma: 1.5
 gnssNormType: 1
 gnssNormParam: 3.0
-gnssBackendModality: 0

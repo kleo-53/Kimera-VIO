@@ -6,19 +6,19 @@
  * See LICENSE for the license information
  * -------------------------------------------------------------------------- */
 
-/*
- * @file PointPlaneFactor.h
- * @brief PointPlane Factor class
- * @author Antoni Rosinol
- * @date February 20, 2018
+/**
+ * @file   GnssFactor.h
+ * @brief  Gnss Factor class
+ * @author Elizaveta Karaseva
  */
-
 
 #pragma once
 
-#include <gtsam/geometry/Pose3.h>
 #include <gtsam/geometry/Point3.h>
+#include <gtsam/geometry/Pose3.h>
 #include <gtsam/nonlinear/NonlinearFactor.h>
+
+#include <string>  // for string
 
 namespace gtsam {
 
@@ -35,7 +35,6 @@ namespace gtsam {
 class GnssFactor : public NoiseModelFactor1<Pose3> {
  public:
   using Base = NoiseModelFactor1<Pose3>;
-
   /// Default constructor (for serialization only)
   GnssFactor();
 
@@ -47,14 +46,9 @@ class GnssFactor : public NoiseModelFactor1<Pose3> {
              const SharedNoiseModel& noiseModel);
 
   // /// Evaluate residual: pose.translation() - GNSS
-  // Vector evaluateError(const Pose3& pose,
-  //                      OptionalMatrixType H = nullptr) const override;
   gtsam::Vector evaluateError(
     const gtsam::Pose3& pose,
     boost::optional<gtsam::Matrix&> H = boost::none) const override;
-
-  // /// Deep copy
-  // NonlinearFactor::shared_ptr clone() const override;
 
   /// Print
   void print(const std::string& s = "GnssFactor",

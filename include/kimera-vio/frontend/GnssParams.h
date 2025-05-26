@@ -7,9 +7,9 @@
  * -------------------------------------------------------------------------- */
 
 /**
- * @file   GnssParams.cpp
- * @brief  Params for GnssFrontend.
- * @author Igor Lovets
+ * @file   GnssParams.h
+ * @brief  Params for GnssStereoVisionImuFrontend.
+ * @author Elizaveta Karaseva
  */
 
 #pragma once
@@ -41,8 +41,6 @@ struct GnssParams : public PipelineParams {
 
  public:
   double timestamp_ = 0;
-  Timestamp period_ = 0;
-  size_t gnss_period_estimation_window_ = 50;
   gtsam::Pose3 b_pose_gnss_ = gtsam::Pose3::Identity();
 };
 

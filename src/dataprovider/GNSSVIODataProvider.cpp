@@ -25,15 +25,14 @@
 
 #include <algorithm>  // for max
 #include <fstream>
-#include <limits>  // for numeric_limits<>
+#include <limits>  // for numeric_limits
 #include <map>
-#include <memory>  // for make_unique<>
+#include <memory>  // for make_unique
 #include <string>
-#include <utility>  // for pair<>
+#include <utility>  // for pair
 #include <vector>
 
 #include "kimera-vio/frontend/Gnss.h"
-#include "kimera-vio/frontend/GnssTypes.h"
 #include "kimera-vio/frontend/StereoFrame.h"
 #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 #include "kimera-vio/logging/Logger.h"
@@ -452,7 +451,7 @@ bool GNSSVIODataProvider::parseGnssData(const std::string& input_dataset_path,
   std::getline(fin, line);
 
   Timestamp previous_timestamp = -1;
-  std::vector<Timestamp> timestamp_deltas;
+  // std::vector<Timestamp> timestamp_deltas;
 
   // Read/store GNSS data, line by line.
   while (std::getline(fin, line)) {
@@ -470,12 +469,12 @@ bool GNSSVIODataProvider::parseGnssData(const std::string& input_dataset_path,
 
     CHECK_GT(timestamp, previous_timestamp)
         << "GNSS data is not in chronological order!";
-    if (previous_timestamp != -1 &&
-        timestamp_deltas.size() <
-            vio_params_.gnss_params_.gnss_period_estimation_window_) {
-      timestamp_deltas.push_back(timestamp - previous_timestamp);
-    }
-    previous_timestamp = timestamp;
+    // if (previous_timestamp != -1 &&
+    //     timestamp_deltas.size() <
+    //         vio_params_.gnss_params_.gnss_period_estimation_window_) {
+    //   timestamp_deltas.push_back(timestamp - previous_timestamp);
+    // }
+    // previous_timestamp = timestamp;
 
     GnssPoint gnss_curr_pose(
         gnss_data_raw[0], gnss_data_raw[1], gnss_data_raw[2]);
@@ -493,23 +492,23 @@ bool GNSSVIODataProvider::parseGnssData(const std::string& input_dataset_path,
 
   fin.close();
 
-  size_t used_count =
-      std::min(vio_params_.gnss_params_.gnss_period_estimation_window_,
-               timestamp_deltas.size());
-  if (used_count > 0) {
-    double avg_gnss_period_sec = 0.0;
-    Timestamp delta_sum = 0;
-    for (size_t i = 0; i < used_count; ++i) {
-      delta_sum += timestamp_deltas[i];
-    }
-    avg_gnss_period_sec =
-        static_cast<double>(delta_sum) / used_count * 1e-9;  // в секундах
-    LOG(INFO) << "Average GNSS period over first " << used_count
-              << " samples: " << avg_gnss_period_sec << " seconds.";
-    if (vio_params_.gnss_params_.period_ == -1) {
-      vio_params_.gnss_params_.period_ = avg_gnss_period_sec;
-    }
-  }
+  // size_t used_count =
+  //     std::min(vio_params_.gnss_params_.gnss_period_estimation_window_,
+  //              timestamp_deltas.size());
+  // if (used_count > 0) {
+  //   double avg_gnss_period_sec = 0.0;
+  //   Timestamp delta_sum = 0;
+  //   for (size_t i = 0; i < used_count; ++i) {
+  //     delta_sum += timestamp_deltas[i];
+  //   }
+  //   avg_gnss_period_sec =
+  //       static_cast<double>(delta_sum) / used_count * 1e-9;  // в секундах
+  //   LOG(INFO) << "Average GNSS period over first " << used_count
+  //             << " samples: " << avg_gnss_period_sec << " seconds.";
+  //   if (vio_params_.gnss_params_.period_ == -1) {
+  //     vio_params_.gnss_params_.period_ = avg_gnss_period_sec;
+  //   }
+  // }
 
   return true;
 }

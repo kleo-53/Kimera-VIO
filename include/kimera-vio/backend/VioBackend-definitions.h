@@ -10,6 +10,7 @@
  * @file   VioBackend-definitions.h
  * @brief  Definitions for VioBackend.
  * @author Antoni Rosinol
+ * @author Elizaveta Karaseva
  */
 
 #pragma once
@@ -245,16 +246,14 @@ struct BackendInput : public PipelinePayload {
       std::optional<gtsam::Pose3> body_lkf_OdomPose_body_kf = std::nullopt,
       std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf =
           std::nullopt,
-      std::optional<std::vector<Timestamp>> gnss_stamps = std::nullopt,
-      std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt)
+      std::optional<GnssPoint> gnss_point = std::nullopt)
       : PipelinePayload(timestamp_kf_nsec),
         status_stereo_measurements_kf_(status_stereo_measurements_kf),
         pim_(pim),
         imu_acc_gyrs_(imu_acc_gyrs),
         body_lkf_OdomPose_body_kf_(body_lkf_OdomPose_body_kf),
         body_kf_world_OdomVel_body_kf_(body_kf_world_OdomVel_body_kf),
-        gnss_stamps_(gnss_stamps),
-        gnss_points_(gnss_points) {}
+        gnss_point_(gnss_point) {}
 
  public:
   const StatusStereoMeasurementsPtr status_stereo_measurements_kf_;
@@ -264,9 +263,7 @@ struct BackendInput : public PipelinePayload {
   // frame
   std::optional<gtsam::Velocity3> body_kf_world_OdomVel_body_kf_;
 
-  std::optional<std::vector<Timestamp>> gnss_stamps_;
-  std::optional<std::vector<GnssPoint>> gnss_points_;
-  // std::vector<gtsam::Point3> gnss_points_;
+  std::optional<GnssPoint> gnss_point_;
 
  public:
   void print() const {
@@ -358,7 +355,7 @@ struct BackendOutput : public PipelinePayload {
  *  - kStereoImu: vanilla Backend type using Stereo and IMU
  *  - kStructuralRegularities: the `regular VIO` Backend, using structural
  * regularities derived from the 3D Mesh.
- * - kGnssStructuralRegularities: based on `regular vio`, using GNSS factor
+ * - kGnssStructuralRegularities: based on `regular vio`, using GNSS factors
  */
 enum class BackendType {
   kStereoImu = 0,

@@ -10,7 +10,6 @@
  * @file   VisionImuFrontend-definitions.h
  * @brief  Definitions for VisionImuFrontend
  * @author Marcus Abate
- * @author Igor Lovets
  */
 
 #pragma once
@@ -22,6 +21,7 @@
 
 namespace VIO {
 
+// TODO(marcus): this could probably move somewhere else once refactor happens
 struct ExternalOdomMeasurement {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 

@@ -11,12 +11,16 @@
  * @brief  Pipeline Module that takes care of providing RBGD + IMU data to the
  * VIO pipeline.
  * @author Antoni Rosinol
+ * @author Elizaveta Karaseva
  */
 
-#include <utility>  // for move
-#include <optional>
-
 #include "kimera-vio/dataprovider/MonoDataProviderModule.h"
+
+#include <memory>  // for make_unique
+#include <optional>
+#include <string>   // for string
+#include <utility>  // for move
+
 #include "kimera-vio/frontend/MonoImuSyncPacket.h"
 
 namespace VIO {
@@ -28,7 +32,6 @@ MonoDataProviderModule::MonoDataProviderModule(OutputQueue* output_queue,
                          name_id,
                          parallel_run),
       left_frame_queue_("data_provider_left_frame_queue"),
-      // gnss_queue_("gnss_queue"),
       cached_left_frame_(nullptr) {}
 
 MonoDataProviderModule::InputUniquePtr
@@ -48,7 +51,6 @@ MonoDataProviderModule::getInputPacket() {
 MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
     bool cache_timestamp) {
   // Retrieve left frame data.
-  // LOG(INFO) << "IN MONO SYNC PACKET";
   Frame::UniquePtr left_frame_payload;
   if (cached_left_frame_) {
     repeated_frame_ = true;
@@ -59,7 +61,6 @@ MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
   }
 
   if (!left_frame_payload) {
-    // LOG(INFO) << "NO";
     return nullptr;
   }
 
@@ -86,7 +87,6 @@ MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
       return nullptr;
   }
 
-  // LOG(INFO) << "OK AFTER IMU";
   bool odometry_valid = false;
   gtsam::NavState external_odometry;
   if (external_odometry_buffer_) {
@@ -119,27 +119,22 @@ MonoImuSyncPacket::UniquePtr MonoDataProviderModule::getMonoImuSyncPacket(
                                                imu_meas.acc_gyr_,
                                                external_odometry);
   }
-  // LOG(INFO) << "OK";
 
-  //! Send synchronized left frame and IMU data. // вот тут возвращает null видимо
+  //! Send synchronized left frame and IMU data.
   return std::make_unique<MonoImuSyncPacket>(
       std::move(left_frame_payload), imu_meas.timestamps_, imu_meas.acc_gyr_, std::nullopt);
 }
 
 Frame::UniquePtr MonoDataProviderModule::getLeftFramePayload() {
-  // LOG(INFO) << "TAKE LEFT FRAME PAYLOAD TO mono packet";
   bool queue_state = false;
   Frame::UniquePtr left_frame_payload = nullptr;
   if (MISO::parallel_run_) {
-    // LOG(INFO) << "1";
     queue_state = left_frame_queue_.popBlocking(left_frame_payload);
   } else {
-    // LOG(INFO) << "2";
     queue_state = left_frame_queue_.pop(left_frame_payload);
   }
 
   if (!queue_state) {
-    // LOG(INFO) << "Module: " << MISO::name_id_ << " - queue is down, return null";
     LOG_IF(WARNING, MISO::parallel_run_ && !MISO::shutdown_)
         << "Module: " << MISO::name_id_ << " - queue is down";
     VLOG_IF(1, !MISO::parallel_run_)
@@ -147,7 +142,7 @@ Frame::UniquePtr MonoDataProviderModule::getLeftFramePayload() {
     return nullptr;
   }
   CHECK(left_frame_payload);
-//  LOG(INFO) << "OK";
+
   return left_frame_payload;
 }
 

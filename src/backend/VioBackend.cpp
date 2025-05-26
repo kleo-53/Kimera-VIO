@@ -303,8 +303,7 @@ bool VioBackend::addVisualInertialStateAndOptimize(
     const gtsam::PreintegrationType& pim,
     std::optional<gtsam::Pose3> odometry_body_pose,
     std::optional<gtsam::Velocity3> odometry_vel,
-    std::optional<std::vector<Timestamp>> gnss_stamps,
-    std::optional<std::vector<GnssPoint>> gnss_points) {
+    std::optional<GnssPoint> gnss_point) {
   debug_info_.resetAddedFactorsStatistics();
 
   // Features and IMU line up --> do iSAM update
@@ -443,8 +442,7 @@ bool VioBackend::addVisualInertialStateAndOptimize(const BackendInput& input) {
       *input.pim_,                            // Imu preintegrated data.
       input.body_lkf_OdomPose_body_kf_,
       input.body_kf_world_OdomVel_body_kf_,
-      input.gnss_stamps_,
-      input.gnss_points_);
+      input.gnss_point_);
   // Bookkeeping
   timestamp_lkf_ = input.timestamp_;
   LOG(INFO) << "IN VIOBACKEND";
@@ -1054,7 +1052,6 @@ bool VioBackend::optimize(
   const auto& total_start_time = utils::Timer::tic();
   // Store start time to calculate per module total time.
   auto start_time = total_start_time;
-  // LOG(WARNING) << "START TIC, start time:" << start_time;
   // Reset all timing infupdateSmoother
   /////////////////////// BOOKKEEPING ////////////////////////////////////
   size_t new_smart_factors_size = new_smart_factors_.size();
@@ -1181,7 +1178,6 @@ bool VioBackend::optimize(
     debug_info_.updateTime_ =
         utils::Timer::toc<std::chrono::seconds>(start_time).count();
     start_time = utils::Timer::tic();
-    // LOG(WARNING) << "TIC UPD 2, start time " << start_time;
   }
 
   // Compute iSAM update.
@@ -1199,7 +1195,6 @@ bool VioBackend::optimize(
     debug_info_.updateTime_ =
         utils::Timer::toc<std::chrono::seconds>(start_time).count();
     start_time = utils::Timer::tic();
-    // LOG(WARNING) << "TIC UPD 3, start time " << start_time;
   }
 
   /////////////////////////// BOOKKEEPING //////////////////////////////////////
@@ -1243,7 +1238,6 @@ bool VioBackend::optimize(
       debug_info_.extraIterationsTime_ =
           utils::Timer::toc<std::chrono::seconds>(start_time).count();
       start_time = utils::Timer::tic();
-      // LOG(WARNING) << "TIC UPD 5, start time " << start_time;
     }
 
     // Update states we need for next iteration, if smoother is ok.
@@ -2188,8 +2182,7 @@ void VioBackend::postDebug(
     // Sanity check timings
     const auto& end_time =
         utils::Timer::toc<std::chrono::seconds>(total_start_time).count();
-    LOG(WARNING) << "DURATION TIME::::: " << end_time;
-        const auto& end_time_from_sum = debug_info_.sumAllTimes();
+    const auto& end_time_from_sum = debug_info_.sumAllTimes();
     LOG_IF(ERROR, end_time != end_time_from_sum)
         << "Optimize: time measurement mismatch."
            "The sum of the parts is not equal to the total.";

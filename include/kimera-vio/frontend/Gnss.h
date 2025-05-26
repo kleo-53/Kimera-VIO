@@ -1,10 +1,26 @@
+/* ----------------------------------------------------------------------------
+ * Copyright 2017, Massachusetts Institute of Technology,
+ * Cambridge, MA 02139
+ * All Rights Reserved
+ * Authors: Luca Carlone, et al. (see THANKS for the full author list)
+ * See LICENSE for the license information
+ * -------------------------------------------------------------------------- */
+
+/**
+ * @file   Gnss.h
+ * @brief  Class describing Gnss Point
+ * @author Elizaveta Karaseva
+ */
+
 #pragma once
 
 #include <Eigen/Core>
+#include <utility>  // for move
+
 #include "kimera-vio/common/vio_types.h"
 
 namespace VIO {
-  
+
 using GnssPoint = gtsam::Point3;
 
 struct GnssMeasurement {
@@ -13,98 +29,9 @@ struct GnssMeasurement {
     : timestamp_(timestamp), point_(point) {}
   GnssMeasurement(Timestamp&& timestamp, GnssPoint&& point)
   : timestamp_(std::move(timestamp)), point_(std::move(point)) {}
-  
+
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Timestamp timestamp_;
   GnssPoint point_;
 };
-
-using GnssStampS = Eigen::Matrix<Timestamp, 1, Eigen::Dynamic>;
-using GnssPointS = Eigen::Matrix<double, 3, Eigen::Dynamic>;
-
-  struct GnssMeasurements {
-    public:
-     GnssMeasurements() = default;
-     GnssMeasurements(const GnssStampS& timestamps, const GnssPointS& points)
-         : timestamps_(timestamps), points_(points) {}
-     GnssMeasurements(GnssStampS&& timestamps, GnssPointS&& points)
-         : timestamps_(std::move(timestamps)), points_(std::move(points)) {}
-   
-     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-     GnssStampS timestamps_;
-     GnssPointS points_;
-  };
-
 }  // namespace VIO
-
-// /* ----------------------------------------------------------------------------
-//  * Copyright 2017, Massachusetts Institute of Technology,
-//  * Cambridge, MA 02139
-//  * All Rights Reserved
-//  * Authors: Luca Carlone, et al. (see THANKS for the full author list)
-//  * See LICENSE for the license information
-//  * -------------------------------------------------------------------------- */
-
-// /**
-//  * @file   Gnss.h
-//  * @brief  Class describing a single image
-//  * @author Luca Carlone
-//  */
-
-// #pragma once
-
-// #include <glog/logging.h>
-// #include <gtsam/base/Matrix.h>
-// #include <stdio.h>
-// #include <stdlib.h>
-
-// #include <boost/foreach.hpp>
-// #include <cstdlib>
-// #include <numeric>
-// #include <string>
-
-// #include "kimera-vio/common/vio_types.h"
-// #include "kimera-vio/pipeline/PipelinePayload.h"
-
-// namespace VIO {
-
-// ////////////////////////////////////////////////////////////////////////////
-// // Class for storing/processing a single image
-// class Gnss : public PipelinePayload {
-//  public:
-//   // KIMERA_DELETE_COPY_CONSTRUCTORS(Gnss);
-//   KIMERA_POINTER_TYPEDEFS(Gnss);
-//   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-//   // Constructors.
-//   /// @param img: does a shallow copy of the image by defaults,
-//   ///  if Frame should have ownership of the image, clone it.
-
-//   // Gnss() = default;
-//   Gnss(const Timestamp& timestamp, const gtsam::Vector3& pos)
-//       : PipelinePayload(timestamp), nav_pos_(pos) {}
-
-//   // Gnss(const Timestamp& timestamp, const gtsam::Vector3& pos, bool undefined)
-//   //     : PipelinePayload(timestamp), nav_pos_(pos), undefined_(undefined_) {}
-
-//   Gnss(const Gnss& gnss)
-//       : PipelinePayload(gnss.timestamp_),
-//         nav_pos_(gnss.nav_pos_) {}
-//         // undefined_(gnss.undefined_) {}
-
-//   // Gnss() = delete;
-
-//  public:
-//   /* ------------------------------------------------------------------------ */
-//   void print() const {
-//     LOG(INFO) << "Gnss position at timestamp: " << timestamp_ << "\n"
-//               << "pos_: " << nav_pos_; // << "\n"
-//               // << "undefined_: " << undefined_;
-//   }
-
-//  public:
-//   const gtsam::Vector3 nav_pos_;
-//   // bool undefined_ = true;
-// };
-
-// }  // namespace VIO

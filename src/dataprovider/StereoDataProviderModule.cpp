@@ -11,11 +11,16 @@
  * @brief  Pipeline Module that takes care of providing data to the VIO
  * pipeline.
  * @author Antoni Rosinol
+ * @author Elizaveta Karaseva
  */
 
 #include "kimera-vio/dataprovider/StereoDataProviderModule.h"
 
 #include <glog/logging.h>
+
+#include <memory>  // for make_unique
+#include <string>  // for string
+#include <utility> // for move
 
 #include "kimera-vio/frontend/MonoImuSyncPacket.h"
 

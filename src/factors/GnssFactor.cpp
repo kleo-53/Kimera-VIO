@@ -6,11 +6,10 @@
  * See LICENSE for the license information
  * -------------------------------------------------------------------------- */
 
-/*
- * PointPlaneFactor.cpp
- *
- *  Created on: Feb 20, 2018
- *      Author: Antoni Rosinol
+/**
+ * @file   GnssFactor.cpp
+ * @brief  Gnss Factor class
+ * @author Elizaveta Karaseva
  */
 
 #include "kimera-vio/factors/GnssFactor.h"
@@ -40,7 +39,6 @@ gtsam::Vector GnssFactor::evaluateError(
 }
 
 gtsam::NonlinearFactor::shared_ptr GnssFactor::clone() const {
-  // return boost::make_shared<GnssFactor>(*this);
   return gtsam::NonlinearFactor::shared_ptr(new GnssFactor(*this));
 }
 
@@ -49,5 +47,5 @@ void GnssFactor::print(const std::string& s,
   LOG(INFO) << s << "GNSS Factor on pose " << keyFormatter(this->key()) << "\n";
   this->noiseModel_->print("  noise model: ");
   traits<Point3>::Print(position_, "  measured position: ");
-  }
-  }  // namespace gtsam
+}
+}  // namespace gtsam

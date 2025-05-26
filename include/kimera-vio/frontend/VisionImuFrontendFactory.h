@@ -10,14 +10,17 @@
  * @file   VisionImuFrontendFactory.h
  * @brief  Factory of vision Frontends.
  * @author Antoni Rosinol
+ * @author Elizaveta Karaseva
  */
 
 #pragma once
 
+#include <memory>  // for make_unique
+
 #include "kimera-vio/frontend/GnssStereoVisionImuFrontend.h"
+#include "kimera-vio/frontend/GnssVisionImuFrontendModule.h"
 #include "kimera-vio/frontend/MonoVisionImuFrontend.h"
 #include "kimera-vio/frontend/StereoVisionImuFrontend.h"
-#include "kimera-vio/frontend/GnssVisionImuFrontendModule.h"
 #include "kimera-vio/frontend/VisionImuFrontend.h"
 #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 

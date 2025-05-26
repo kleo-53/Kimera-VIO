@@ -25,9 +25,9 @@
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/ProjectionFactor.h>
 
-#include <map>      // for map<>
-#include <utility>  // for pair<>
-#include <vector>   // for vector<>
+#include <map>      // for map
+#include <utility>  // for pair
+#include <vector>   // for vector
 
 #include "kimera-vio/factors/PointPlaneFactor.h"
 #include "kimera-vio/utils/UtilsNumerical.h"
@@ -157,8 +157,7 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
     const gtsam::PreintegrationType& pim,
     std::optional<gtsam::Pose3> odometry_body_pose,
     std::optional<gtsam::Velocity3> odometry_vel,
-    std::optional<std::vector<Timestamp>> gnss_stamps,
-    std::optional<std::vector<GnssPoint>> gnss_points) {
+    std::optional<GnssPoint> gnss_point) {
   debug_info_.resetAddedFactorsStatistics();
 
   // Features and IMU line up --> do iSAM update.
@@ -221,7 +220,7 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
       VLOG(10) << "Add zero velocity and no motion factors.";
       addZeroVelocityPrior(curr_kf_id_);
       addNoMotionFactor(last_kf_id_, curr_kf_id_);
-      // TODO(?) why are we not adding the regularities here as well...?
+      // TODO why are we not adding the regularities here as well...?
       break;
     }
     default: {
@@ -380,13 +379,9 @@ bool RegularVioBackend::addVisualInertialStateAndOptimize(
         curr_kf_id_, *odometry_vel, odom_params_->velocityPrecision_);
   }
 
-  if (gnss_points && !gnss_points->empty()) {
-    const gtsam::Symbol pose_key('x', curr_kf_id_);
-    if (odometry_body_pose) {
-      const auto residual = (odometry_body_pose->translation() - (*gnss_points)[0]).transpose();
-      LOG(INFO) << "Pre-opt residual (using odometry): " << residual.transpose();
-    }
-    this->beforeOptimizeHook(timestamp_kf_nsec, gnss_points);
+  if (gnss_point.has_value()) {
+    const gtsam::Symbol pose_key(kPoseSymbolChar, curr_kf_id_);
+    this->beforeOptimizeHook(timestamp_kf_nsec, gnss_point);
   }
 
   /////////////////// OPTIMIZE /////////////////////////////////////////////////

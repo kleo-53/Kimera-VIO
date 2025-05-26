@@ -11,12 +11,15 @@
  * @brief  Pipeline module for the Backend.
  *
  * @author Antoni Rosinol
+ * @author Elizaveta Karaseva
  */
 
 #pragma once
 
-#include "kimera-vio/backend/RegularVioBackend.h"
+#include <memory>  // for make_unique
+
 #include "kimera-vio/backend/GnssVioBackend.h"
+#include "kimera-vio/backend/RegularVioBackend.h"
 #include "kimera-vio/backend/VioBackend-definitions.h"
 #include "kimera-vio/backend/VioBackend.h"
 #include "kimera-vio/utils/Macros.h"
@@ -60,12 +63,12 @@ class BackendFactory {
       }
       case BackendType::kGnssStructuralRegularities: {
         return std::make_unique<GnssVioBackend>(B_Pose_leftCamRect,
-          stereo_calibration,
-          backend_params,
-          imu_params,
-          backend_output_params,
-          log_output,
-          odom_params);
+                                                stereo_calibration,
+                                                backend_params,
+                                                imu_params,
+                                                backend_output_params,
+                                                log_output,
+                                                odom_params);
       }
       default: {
         LOG(FATAL) << "Requested Backend type is not supported.\n"

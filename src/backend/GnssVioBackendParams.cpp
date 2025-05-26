@@ -7,27 +7,28 @@
  * -------------------------------------------------------------------------- */
 
 /**
- * @file   RegularVioBackendParams.cpp
- * @brief  Class collecting the parameters of the Visual Inertial odometry
- * pipeline for the RegularVIO implementation.
- * @author Antoni Rosinol
+ * @file   GnssVioBackendParams.cpp
+ * @brief  Class collecting the parameters of the Gnss Visual Inertial odometry
+ * pipeline for the GnssVIO implementation.
+ * @author Elisaveta Karaseva
  */
 
 #include "kimera-vio/backend/GnssVioBackendParams.h"
 
+#include <string>  // for string
+
 namespace VIO {
-// TOD: checks? as regularviobackend
 
 GnssVioBackendParams::GnssVioBackendParams() : RegularVioBackendParams() {
   // Trivial sanity checks.
-  // CHECK_GE(gnssNoiseSigma_, 0.0);
-  // CHECK_GE(stereoNoiseSigma_, 0.0);
-  // CHECK_GE(regularityNoiseSigma_, 0.0);
-  // CHECK_GE(monoNormType_, 0);
-  // CHECK_GE(stereoNormType_, 0);
-  // CHECK_GE(regularityNormType_, 0);
-  // CHECK_GE(huberParam_, 0.0);
-  // CHECK_GE(tukeyParam_, 0.0);
+  CHECK_GE(gnssNoiseSigma_, 0.0);
+  CHECK_GE(stereoNoiseSigma_, 0.0);
+  CHECK_GE(regularityNoiseSigma_, 0.0);
+  CHECK_GE(monoNormType_, 0);
+  CHECK_GE(stereoNormType_, 0);
+  CHECK_GE(regularityNormType_, 0);
+  CHECK_GE(huberParam_, 0.0);
+  CHECK_GE(tukeyParam_, 0.0);
 }
 
 bool GnssVioBackendParams::parseYAML(const std::string& filepath) {
@@ -42,10 +43,6 @@ bool GnssVioBackendParams::parseYAMLGnssVioBackendParams(const YamlParser& yaml_
   yaml_parser.getYamlParam("gnssNoiseSigma", &gnssNoiseSigma_);
   yaml_parser.getYamlParam("gnssNormType", &gnssNormType_);
   yaml_parser.getYamlParam("gnssNormParam", &gnssNormParam_);
-  int backend_modality = 0;
-  yaml_parser.getYamlParam("gnssBackendModality", &backend_modality);
-  backend_modality_ = static_cast<GnssBackendModality>(backend_modality);
-//   backend_modality_ = GnssBackendModality::STRUCTURELESS_WITH_GNSS;
   return true;
 }
 
@@ -61,8 +58,7 @@ bool GnssVioBackendParams::equalsGnssVioBackendParams(const BackendParams& vp2,
   return fabs(initialGnssPoseSigma_ - rvp2.initialGnssPoseSigma_) <= tol &&
          fabs(gnssNoiseSigma_ - rvp2.gnssNoiseSigma_) <= tol &&
          gnssNormType_ == rvp2.gnssNormType_ &&
-         fabs(gnssNormParam_ - rvp2.gnssNormParam_) <= tol &&
-         (backend_modality_ == rvp2.backend_modality_);
+         fabs(gnssNormParam_ - rvp2.gnssNormParam_) <= tol;
 }
 
 void GnssVioBackendParams::print() const {

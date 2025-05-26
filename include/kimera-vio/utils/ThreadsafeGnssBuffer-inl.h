@@ -43,7 +43,6 @@
 #include <glog/logging.h>
 
 #include "kimera-vio/common/vio_types.h"
-// #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 
 namespace VIO {
 
@@ -69,18 +68,6 @@ inline void ThreadsafeGnssBuffer::addMeasurement(
   cv_new_measurement_.notify_all();
 }
 
-inline void ThreadsafeGnssBuffer::addMeasurements(
-    const GnssStampS& timestamps_nanoseconds,
-    const GnssPointS& gnss_points) {
-  CHECK_EQ(timestamps_nanoseconds.cols(), gnss_points.cols());
-  size_t num_samples = timestamps_nanoseconds.cols();
-  CHECK_GT(num_samples, 0u);
-
-  for (size_t idx = 0u; idx < num_samples; ++idx) {
-    addMeasurement(timestamps_nanoseconds(idx), gnss_points.col(idx));
-  }
-}
-
 inline void ThreadsafeGnssBuffer::clear() {
   buffer_.clear();
 }
@@ -94,6 +81,6 @@ inline void ThreadsafeGnssBuffer::shutdown() {
   cv_new_measurement_.notify_all();
 }
 
-} // End of utils namespace.
+}  // namespace utils
 
-} // End of VIO namespace.
+}  // namespace VIO

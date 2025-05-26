@@ -171,9 +171,8 @@ class VioBackend {
         << "Requested initialization from Ground-Truth pose but got an "
            "identity pose: did you parse your ground-truth correctly?";
     VioNavState initial_gt = backend_params_.initial_ground_truth_state_;
-    if (input.gnss_points_ && !input.gnss_points_->empty()) {
-      // initial_gt.pose_ = input.gnss_points_->back();
-      const Eigen::Matrix<double, 3, 1>& gt_eig = input.gnss_points_->back();
+    if (input.gnss_point_.has_value()) {
+      const Eigen::Matrix<double, 3, 1>& gt_eig = *input.gnss_point_;
       gtsam::Point3 gnss_t(gt_eig(0), gt_eig(1), gt_eig(2));
       LOG(INFO) << "INIT POSE: " << initial_gt.pose_;
       const gtsam::Rot3& R = initial_gt.pose_.rotation();
@@ -236,8 +235,7 @@ class VioBackend {
       const gtsam::PreintegrationType& pim,
       std::optional<gtsam::Pose3> odometry_body_pose = std::nullopt,
       std::optional<gtsam::Velocity3> odometry_vel = std::nullopt,
-      std::optional<std::vector<Timestamp>> gnss_stamps = std::nullopt,
-      std::optional<std::vector<GnssPoint>> gnss_points = std::nullopt);
+      std::optional<GnssPoint> gnss_point = std::nullopt);
 
   // Uses landmark table to add factors in graph.
   void addLandmarksToGraph(const LandmarkIds& landmarks_kf);
