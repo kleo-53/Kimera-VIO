@@ -18,9 +18,9 @@
 
 #include <glog/logging.h>
 
-#include <memory>  // for make_unique
-#include <string>  // for string
-#include <utility> // for move
+#include <memory>   // for make_unique
+#include <string>   // for string
+#include <utility>  // for move
 
 #include "kimera-vio/frontend/MonoImuSyncPacket.h"
 

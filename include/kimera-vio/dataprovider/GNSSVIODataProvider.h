@@ -64,7 +64,7 @@ class GNSSVIODataProvider : public DataProviderInterface {
 
   bool hasData() const override;
 
-  void print() const override;
+  void print() const;
 
  public:
   // Ground truth data.
