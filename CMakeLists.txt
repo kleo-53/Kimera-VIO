@@ -272,6 +272,12 @@ if(KIMERA_BUILD_TESTS)
     tests/testVisualizer3D.cpp # NEEDS UPDATE
     tests/testOnlineAlignment.cpp
     tests/testOpticalFlowPredictor.cpp
+    ### GNSS
+    tests/testGnssParams.cpp
+    tests/testGnssStereoImuPipeline.cpp
+    tests/testGnssStereoProvider.cpp
+    tests/testThreadsafeGnssBuffer.cpp
+    tests/testGnssFactor.cpp
   )
   target_include_directories(testKimeraVIO PUBLIC tests/include)
   target_link_libraries(testKimeraVIO gtest gmock kimera_vio::kimera_vio)
