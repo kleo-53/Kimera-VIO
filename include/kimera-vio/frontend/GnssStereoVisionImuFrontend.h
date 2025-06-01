@@ -8,8 +8,8 @@
 
 /**
  * @file   StereoVisionImuFrontend.h
- * @brief  Class describing a stereo tracker
- * @author Antoni Rosinol, Luca Carlone
+ * @brief  Class describing a stereo tracker with gnss
+ * @author Antoni Rosinol, Luca Carlone, Elizaveta Karaseva
  */
 
 #pragma once

@@ -11,6 +11,7 @@
  * @brief  Class describing a stereo tracker with gnss
  * @author Antoni Rosinol
  * @author Luca Carlone
+ * @author Elizaveta Karaseva
  */
 
 #include "kimera-vio/frontend/GnssStereoVisionImuFrontend.h"
@@ -33,6 +34,8 @@ DECLARE_bool(do_fine_gnss_camera_temporal_sync);
 
 namespace VIO {
 
+// ===== MOSTLY COPIED FROM StereoVisionImuFrontend =====
+// Reason: needs GNSS support in spin payload
 GnssStereoVisionImuFrontend::GnssStereoVisionImuFrontend(
     const ImuParams& imu_params,
     const ImuBias& imu_initial_bias,
@@ -114,7 +117,6 @@ GnssStereoVisionImuFrontend::bootstrapSpinStereo(
       getTrackerInfo(),
       std::nullopt,  // lkf_body_Pose_kf_body
       std::nullopt,  // velocity
-      // gnss_timestamp_optional,
       gnss_point_optional);
 }
 
@@ -197,13 +199,6 @@ GnssStereoVisionImuFrontend::nominalSpinStereo(
     gnss_point_optional.emplace(gnss_point);
   }
 
-  // const Timestamp& gnss_timestamp = input->getGnssStamp();
-  // std::optional<Timestamp> gnss_timestamp_optional = std::nullopt;
-
-  // if (gnss_timestamp != 0) {
-  //   gnss_timestamp_optional.emplace(gnss_timestamp);
-  // }
-
   if (stereoFrame_km1_->isKeyframe()) {
     // We got a keyframe!
     CHECK_EQ(stereoFrame_lkf_->timestamp_, stereoFrame_km1_->timestamp_);
@@ -270,7 +265,6 @@ GnssStereoVisionImuFrontend::nominalSpinStereo(
         getTrackerInfo(),
         std::nullopt,  // lkf_body_Pose_kf_body
         std::nullopt,  // velocity
-        // gnss_timestamp_optional,
         gnss_point_optional);
   }
 }

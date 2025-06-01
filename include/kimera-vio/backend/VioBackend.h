@@ -155,6 +155,10 @@ class VioBackend {
         initializeFromIMU(input);
         break;
       }
+      case 2: {
+        initializeFromGnss(input);
+        break;
+      }
       default: {
         LOG(FATAL) << "Wrong initialization mode.";
       }
@@ -171,15 +175,24 @@ class VioBackend {
         << "Requested initialization from Ground-Truth pose but got an "
            "identity pose: did you parse your ground-truth correctly?";
     VioNavState initial_gt = backend_params_.initial_ground_truth_state_;
+    return initStateAndSetPriors(VioNavStateTimestamped(
+        input.timestamp_, backend_params_.initial_ground_truth_state_));
+  }
+
+  bool initializeFromGnss(const BackendInput& input) {
+    // If the gtNavState is identity, the params provider probably did a
+    // mistake, although it can happen that the ground truth initial pose is
+    // identity, but this is super unlikely
+    CHECK(!backend_params_.initial_ground_truth_state_.equals(VioNavState()))
+        << "Requested initialization from GNSS but got an "
+           "identity pose: did you parse your ground-truth correctly?";
+    VioNavState initial_gt = backend_params_.initial_ground_truth_state_;
     if (input.gnss_point_.has_value()) {
       const Eigen::Matrix<double, 3, 1>& gt_eig = *input.gnss_point_;
       gtsam::Point3 gnss_t(gt_eig(0), gt_eig(1), gt_eig(2));
-      LOG(INFO) << "INIT POSE: " << initial_gt.pose_;
       const gtsam::Rot3& R = initial_gt.pose_.rotation();
       initial_gt.pose_ = gtsam::Pose3(R, gnss_t);
-      LOG(INFO) << "GNSS POSE: " << initial_gt.pose_;
     }
-    auto init_pose_ = initial_gt.pose_;
     return initStateAndSetPriors(
         VioNavStateTimestamped(input.timestamp_, std::move(initial_gt)));
   }

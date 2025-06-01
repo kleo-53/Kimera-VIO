@@ -1,10 +1,17 @@
 /* ----------------------------------------------------------------------------
- * Copyright 2023, SPb CVS,
+ * Copyright 2017, Massachusetts Institute of Technology,
+ * Cambridge, MA 02139
+ * All Rights Reserved
+ * Authors: Luca Carlone, et al. (see THANKS for the full author list)
+ * See LICENSE for the license information
  * -------------------------------------------------------------------------- */
 
 /**
  * @file   GNSSVIODataProvider.h
  * @brief  Parse EUROC dataset format with additional info about GNSS position.
+ * @author Antoni Rosinol
+ * @author Yun Chang
+ * @author Luca Carlone
  * @author Elizaveta Karaseva
  */
 
@@ -200,7 +207,7 @@ class GNSSVIODataProvider : public DataProviderInterface {
 
   //! Pre-stored imu-measurements
   std::vector<ImuMeasurement> imu_measurements_;
-  std::vector<GnssMeasurement> gnss_measurements_;  // TOD: или gnss
+  std::vector<GnssMeasurement> gnss_measurements_;
 
   EurocGtLogger::UniquePtr logger_;
 };

@@ -8,10 +8,11 @@
 
 /**
  * @file   GNSSVIODataProvider.h
- * @brief  Parse EUROC dataset.
+ * @brief  Parse EUROC dataset format with additional info about GNSS position.
  * @author Antoni Rosinol
  * @author Yun Chang
  * @author Luca Carlone
+ * @author Elizaveta Karaseva
  */
 
 #include "kimera-vio/dataprovider/GNSSVIODataProvider.h"
@@ -46,6 +47,8 @@ DECLARE_bool(log_euroc_gt_data);
 
 namespace VIO {
 
+// =====  MOSTLY COPIED FROM EurocDataProvider =====
+// Reason: needs GNSS support in class initialization
 /* -------------------------------------------------------------------------- */
 GNSSVIODataProvider::GNSSVIODataProvider(const std::string& dataset_path,
                                          const int& initial_k,
@@ -95,11 +98,6 @@ GNSSVIODataProvider::GNSSVIODataProvider(const VioParams& vio_params)
                           vio_params) {}
 
 /* -------------------------------------------------------------------------- */
-//  GNSSVIODataProvider::~GNSSVIODataProvider() {
-//    LOG(INFO) << "ETHDatasetParser destructor called.";
-//  }
-
-/* -------------------------------------------------------------------------- */
 bool GNSSVIODataProvider::spin() {
   if (dataset_parsed_) {
     if (!is_imu_data_sent_) {
@@ -115,7 +113,7 @@ bool GNSSVIODataProvider::spin() {
 
     if (!is_gnss_data_sent_) {
       if (gnss_callback_) {
-        sendGnssData();  // Отправляем GNSS данные
+        sendGnssData();
       }
       is_gnss_data_sent_ = true;
     }
@@ -221,8 +219,9 @@ void GNSSVIODataProvider::parse() {
   if (VLOG_IS_ON(1)) print();
 
   // Send first ground-truth pose to VIO for initialization if requested.
-  if (vio_params_.backend_params_->autoInitialize_ == 0) {
-    // We want to initialize from ground-truth.
+  if (vio_params_.backend_params_->autoInitialize_ == 0 ||
+      vio_params_.backend_params_->autoInitialize_ == 2) {
+    // We want to initialize from ground-truth or gnss
     vio_params_.backend_params_->initial_ground_truth_state_ =
         getGroundTruthState(timestampAtFrame(initial_k_));
   }
@@ -451,13 +450,12 @@ bool GNSSVIODataProvider::parseGnssData(const std::string& input_dataset_path,
   std::getline(fin, line);
 
   Timestamp previous_timestamp = -1;
-  // std::vector<Timestamp> timestamp_deltas;
 
-  // Read/store GNSS data, line by line.
+  // Read GNSS data, line by line.
   while (std::getline(fin, line)) {
     Timestamp timestamp = 0;
     std::vector<double> gnss_data_raw;
-    for (size_t i = 0u; i < 4; i++) {  // 4 полей вместо 17
+    for (size_t i = 0u; i < 4; i++) {  // 4 fields instead of 17
       int idx = line.find_first_of(',');
       if (i == 0u) {
         timestamp = std::stoll(line.substr(0, idx));
@@ -469,12 +467,6 @@ bool GNSSVIODataProvider::parseGnssData(const std::string& input_dataset_path,
 
     CHECK_GT(timestamp, previous_timestamp)
         << "GNSS data is not in chronological order!";
-    // if (previous_timestamp != -1 &&
-    //     timestamp_deltas.size() <
-    //         vio_params_.gnss_params_.gnss_period_estimation_window_) {
-    //   timestamp_deltas.push_back(timestamp - previous_timestamp);
-    // }
-    // previous_timestamp = timestamp;
 
     GnssPoint gnss_curr_pose(
         gnss_data_raw[0], gnss_data_raw[1], gnss_data_raw[2]);
@@ -486,29 +478,9 @@ bool GNSSVIODataProvider::parseGnssData(const std::string& input_dataset_path,
       gtsam::Vector4 p_body_hom = T_BS_mat * p_sensor_hom;
       GnssPoint gnss_curr_pose(p_body_hom(0), p_body_hom(1), p_body_hom(2));
     }
-
     gnss_measurements_.push_back(GnssMeasurement(timestamp, gnss_curr_pose));
   }
-
   fin.close();
-
-  // size_t used_count =
-  //     std::min(vio_params_.gnss_params_.gnss_period_estimation_window_,
-  //              timestamp_deltas.size());
-  // if (used_count > 0) {
-  //   double avg_gnss_period_sec = 0.0;
-  //   Timestamp delta_sum = 0;
-  //   for (size_t i = 0; i < used_count; ++i) {
-  //     delta_sum += timestamp_deltas[i];
-  //   }
-  //   avg_gnss_period_sec =
-  //       static_cast<double>(delta_sum) / used_count * 1e-9;  // в секундах
-  //   LOG(INFO) << "Average GNSS period over first " << used_count
-  //             << " samples: " << avg_gnss_period_sec << " seconds.";
-  //   if (vio_params_.gnss_params_.period_ == -1) {
-  //     vio_params_.gnss_params_.period_ = avg_gnss_period_sec;
-  //   }
-  // }
 
   return true;
 }
