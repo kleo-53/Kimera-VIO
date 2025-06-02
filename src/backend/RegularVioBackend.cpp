@@ -116,8 +116,6 @@ RegularVioBackend::RegularVioBackend(
                  log_output,
                  odom_params),
       regular_vio_params_(RegularVioBackendParams::safeCast(backend_params)) {
-  LOG(INFO) << "Using Regular VIO Backend.\n";
-
   // Set type of mono_noise_ for generic projection factors.
   gtsam::SharedNoiseModel gaussian_dim_2 = gtsam::noiseModel::Isotropic::Sigma(
       2, regular_vio_params_.monoNoiseSigma_);
@@ -881,7 +879,7 @@ bool RegularVioBackend::updateLmkIdIsSmart(
     const LandmarkId& lmk_id,
     const LandmarkIds& lmk_ids_with_regularity,
     LmkIdIsSmart* lmk_id_is_smart) {
-  // TODOOOOO(?) completely change this function: it should be
+  // TODOOOOO completely change this function: it should be
   // if the lmk_id is not found in is_lmk_smart
   // then add it as smart
   // else if it was smart, but now it is in regularity, add it as regularity

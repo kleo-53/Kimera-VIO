@@ -97,20 +97,19 @@ GnssStereoImuPipeline::GnssStereoImuPipeline(
       std::bind(&GnssStereoImuPipeline::spinOnce, this, std::placeholders::_1));
 
   //! Create Frontend
-  vio_frontend_module_ =
-      std::make_unique<VisionImuFrontendModule>(  // TOD: СЮДА GNSS добавить
-          &frontend_input_queue_,
-          parallel_run_,
-          VisionImuFrontendFactory::createFrontend(
-              params.frontend_type_,
-              params.imu_params_,
-              gtsam::imuBias::ConstantBias(),
-              params.frontend_params_,
-              stereo_camera_,
-              //    params.gnss_params_,
-              FLAGS_visualize ? &display_input_queue_ : nullptr,
-              FLAGS_log_output,
-              params.odom_params_));
+  vio_frontend_module_ = std::make_unique<VisionImuFrontendModule>(
+      &frontend_input_queue_,
+      parallel_run_,
+      VisionImuFrontendFactory::createFrontend(
+          params.frontend_type_,
+          params.imu_params_,
+          gtsam::imuBias::ConstantBias(),
+          params.frontend_params_,
+          stereo_camera_,
+          //    params.gnss_params_,
+          FLAGS_visualize ? &display_input_queue_ : nullptr,
+          FLAGS_log_output,
+          params.odom_params_));
 
   auto& backend_input_queue = backend_input_queue_;  //! for the lambda below
   vio_frontend_module_->registerImuTimeShiftUpdateCallback(

@@ -151,14 +151,12 @@ BackendOutput::UniquePtr VioBackend::spinOnce(const BackendInput& input) {
   switch (backend_state) {
     case BackendState::Bootstrap: {
       initializeBackend(input);
-      LOG(INFO) << "INITIALIZED";
       backend_status = true;
       break;
     }
     case BackendState::Nominal: {
       // Process data with VIO.
       backend_status = addVisualInertialStateAndOptimize(input);
-      LOG(INFO) << "SPIN BACKEND";
       break;
     }
     default: {
@@ -287,7 +285,6 @@ bool VioBackend::initStateAndSetPriors(
       curr_kf_id_, W_Pose_B_lkf_from_state_, W_Vel_B_lkf_, imu_bias_lkf_);
 
   VLOG(2) << "Start optimize with initial state and priors!";
-  LOG(INFO) << "INIT VIOBACKEND";
   return optimize(vio_nav_state_initial_seed.timestamp_,
                   curr_kf_id_,
                   backend_params_.numOptimize_);
@@ -445,7 +442,6 @@ bool VioBackend::addVisualInertialStateAndOptimize(const BackendInput& input) {
       input.gnss_point_);
   // Bookkeeping
   timestamp_lkf_ = input.timestamp_;
-  LOG(INFO) << "IN VIOBACKEND";
   return is_smoother_ok;
 }
 
@@ -1132,7 +1128,6 @@ bool VioBackend::optimize(
     debug_info_.factorsAndSlotsTime_ =
         utils::Timer::toc<std::chrono::seconds>(start_time).count();
     start_time = utils::Timer::tic();
-    // LOG(WARNING) << "TIC UPD 1, start time " << start_time;
   }
 
   if (VLOG_IS_ON(10)) {
@@ -1222,7 +1217,6 @@ bool VioBackend::optimize(
       debug_info_.updateSlotTime_ =
           utils::Timer::toc<std::chrono::seconds>(start_time).count();
       start_time = utils::Timer::tic();
-      // LOG(WARNING) << "TIC UPD 4, start time " << start_time;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1251,7 +1245,6 @@ bool VioBackend::optimize(
 
       // Debug.
       postDebug(total_start_time, start_time);
-      // LOG(WARNING) << "Total start time: " << total_start_time << " Start time " << start_time;
     } else {
       LOG(ERROR) << "Smoother is not ok! Not updating Backend state.";
     }

@@ -67,8 +67,7 @@ void GnssStereoImuSyncPacket::print() const {
               << "BIAS : \n"
               << reinit_packet_.getReinitBias();
   }
-  LOG(INFO) << "GNSS Data is present.\n"
-            << "GNSS Position: " << gnss_point_ << '\n';
+  LOG(INFO) << "GNSS Position: " << gnss_point_ << '\n';
   }
 }  // namespace VIO
 

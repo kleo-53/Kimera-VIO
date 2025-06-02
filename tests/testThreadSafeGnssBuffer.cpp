@@ -35,7 +35,6 @@
    limitations under the License.
 *********************************************************************************/
 
-// #include "kimera-vio/imu-frontend/ImuFrontend-definitions.h"
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
@@ -92,32 +91,10 @@ TEST(ThreadsafeGnssBuffer, getNewestAndinterpolateGnssData) {
   EXPECT_EQ(stamp, 35);
   EXPECT_EQ(point, GnssPoint(35, 35, 35));
 
-  // Fail: query out of upper bound.
-  // result = buffer.getInterpolatedValue(51, &stamp, &point);
-  // EXPECT_EQ(result,
-  //           VIO::utils::ThreadsafeGnssBuffer::QueryResult::kDataNotYetAvailable);
-  // result = buffer.getInterpolatedValue(1, &stamp, &point);
-  // EXPECT_EQ(result,
-  //           VIO::utils::ThreadsafeGnssBuffer::QueryResult::kDataNotYetAvailable);
-
   // Fail: query out of lower bound.
   result = buffer.getInterpolatedValue(-10, &stamp, &point);
   EXPECT_EQ(result,
             VIO::utils::ThreadsafeGnssBuffer::QueryResult::kDataNeverAvailable);
 }
-
-// TEST(ThreadsafeGnssBuffer, PopFromEmptyBuffer) {
-//   VIO::utils::ThreadsafeGnssBuffer buffer(-1);
-//   // Pop from empty buffer.
-//   Timestamp stamp;
-//   GnssPoint point;
-//   {
-//     VIO::utils::ThreadsafeGnssBuffer::QueryResult success =
-//         buffer.getInterpolatedValue(50, &stamp,
-//                                        &point);
-//     EXPECT_EQ(success,
-//               utils::ThreadsafeGnssBuffer::QueryResult::kDataNotYetAvailable);
-//   }
-// }
 
 }  // namespace VIO

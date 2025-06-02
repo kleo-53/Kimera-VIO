@@ -41,7 +41,6 @@ GnssVioBackend::GnssVioBackend(const Pose3& B_Pose_leftCamRect,
                         log_output,
                         odom_params),
       gnss_vio_params_(GnssVioBackendParams::safeCast(backend_params)) {
-  LOG(INFO) << "Using Gnss VIO Backend.\n";
   auto base_model =
       gtsam::noiseModel::Isotropic::Sigma(3, gnss_vio_params_.gnssNoiseSigma_);
   selectNormType(&gnss_noise_,
@@ -55,8 +54,6 @@ void GnssVioBackend::beforeOptimizeHook(const Timestamp& ts,
   if (!gnss_point.has_value()) return;
 
   addGnssFactor(curr_kf_id_, *gnss_point, &new_imu_prior_and_other_factors_);
-  LOG(WARNING) << "Added GNSS" << (*gnss_point).transpose() << " to keyframe "
-               << curr_kf_id_ << " ts: " << ts;
 }
 
 void GnssVioBackend::addGnssFactor(const FrameId& frame_id,

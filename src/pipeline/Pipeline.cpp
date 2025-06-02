@@ -15,6 +15,10 @@
 
 #include "kimera-vio/pipeline/Pipeline.h"
 
+#include <memory>   // for make_unique<>
+#include <string>   // for string
+#include <utility>  // for move
+
 DEFINE_bool(log_output, false, "Log output to CSV files.");
 DEFINE_bool(extract_planes_from_the_scene,
             false,
@@ -59,10 +63,9 @@ DEFINE_bool(
     "Estimate the delay between the IMU and the camera. This enables "
     "estimating the time delay between the IMU and the camera (currently by "
     "cross-correlation between relative rotation angles).");
-DEFINE_bool(
-    do_coarse_gnss_camera_temporal_sync, 
-    false,  // значение по умолчанию
-    "Enable coarse temporal sync between GNSS and camera");
+DEFINE_bool(do_coarse_gnss_camera_temporal_sync,
+            false,  // значение по умолчанию
+            "Enable coarse temporal sync between GNSS and camera");
 DEFINE_bool(
   do_fine_gnss_camera_temporal_sync,
   false,
@@ -322,7 +325,6 @@ void Pipeline::resume() {
 
 void Pipeline::spinOnce(FrontendInputPacketBase::UniquePtr input) {
   CHECK(input);
-  LOG(INFO) << "Processing input with ts: " << input->timestamp_; // TOD: убрать!
   if (!shutdown_) {
     // Push to Frontend input queue.
     VLOG(2) << "Push input payload to Frontend.";

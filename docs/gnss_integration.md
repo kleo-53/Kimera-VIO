@@ -2,28 +2,28 @@
 
 This fork extends [Kimera-VIO](https://github.com/MIT-SPARK/Kimera-VIO) by incorporating GNSS support into the stereo visual-inertial pipeline. This implementation adds loosely coupled GNSS integration via custom GTSAM factors. The GNSS data is treated as pose factors (position only).
 
-Due to lack of access to raw GNSS measurements in the [EuRoC](https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) dataset, groundtruth data with different noise levels were used instead.
+Due to lack of access to raw GNSS measurements in the [EuRoC](https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets) dataset, ground truth data with added synthetic noise was used to simulate GNSS input.
 
-Developed as part of a Bachelor's thesis at Saint Petersburg State University.
+> Developed as part of a Bachelor's thesis at Saint Petersburg State University.
 
 ## Architecture
 
 ### Added Components
-Main components:
+Main modules:
 * `GNSSVIODataProvider`: loads GNSS data from dataset
 * `GnssStereoDataProviderModule`: synchronizes different measurements at one time
-* `GnssStereoVisionImuFrontend`: passes GNSS to backend
+* `GnssStereoVisionImuFrontend`: passes GNSS data to backend
 * `GnssVioBackend`: performs graph optimization taking into account GNSS factors
 
-And following:
-* `GnssParams`: set for interaction with GNSS. The `BackendParams` were also modified
-* `GnssFactor`: adds position constraint to pose in backend
-* `ThreadSafeGnssBuffer`: threadsafe structure to manipulate GNSS data in the pipeline
-* `Tests` to added modules
+Additional components:
+* `GnssParams`: holds GNSS-related parameters (added to `VioParams`) The `BackendParams` were also modified
+* `GnssFactor`: custom GTSAM factor applying a positional constraint to a pose
+* `ThreadSafeGnssBuffer`: threadsafe queue for GNSS measurements
+* Unit tests for new modules
 
 ### Backend Integration
 
-GNSS factors are injected using `BeforeOptimizeHook()` in the `RegularVioBackend`. No changes to iSAM2 optimizer needed. The algorithm is robust to noisy GNSS because it can switch loss function in GNSS factors to Huber/Tukey.
+GNSS factors are injected into the factor graph using `BeforeOptimizeHook()` in the `RegularVioBackend`. No changes to iSAM2 optimizer needed. Robustness to GNSS noise is achieved via configurable loss functions in GNSS factors: `L2`, `Huber`, or `Tukey`.
 
 ## Dataset Format
 
@@ -35,21 +35,19 @@ Simulated GNSS data should be located at `gnss0/data.csv`:
 ...
 ```
 
-Transform from GNSS sensor to body frame is defined in `gnss0/sensor.yaml`.
+Sensor transformation (from GNSS coordinates to body coordinates) should be defined in `gnss0/sensor.yaml`.
 
-## Build and Run
+## Build and Run (Windows via WSL + Docker)
 
-Inctruction in Windows OS:
-
-1. Clone the [repository](https://github.com/kleo-53/Kimera-VIO), switch to the dev branch
-2. In `kimera_vio_docker.bash` you need to change the volume to the required ones (with the dataset and with the code)
+1. Clone the [repository](https://github.com/kleo-53/Kimera-VIO), switch to the `dev` branch
+2. In `scripts/gnss/kimera_vio_docker.bash` update the volume paths for the dataset and the code directory.
 3. Open WSL, go to the folder with the project
 4. Execute commands:
 ```bash
-docker build -t kimera_vio -f scripts/docker/Dockerfile .
-./scripts/docker/kimera_vio_docker.bash
+docker build -t kimera_vio -f scripts/gnss/Dockerfile .
+./scripts/gnss/kimera_vio_docker.bash
 ```
-5. In docker in the `Kimera-VIO/` folder, recreate the `build/` folder and build the library there:
+5. Inside the docker container in the `Kimera-VIO/` folder, recreate the `build/` folder and build the library there:
 ```bash
 rm -rf /root/Kimera-VIO/build/*
 mkdir -p ~/Kimera-VIO/build
@@ -57,13 +55,16 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j$(($(nproc)-1))
 ```
-6. Run the script: `../scripts/gnssVIOEuroc.bash -p /Euroc/MH_01_easy -log`
+6. Run the script, providing the path to the dataset within the container: 
+```bash
+../scripts/gnssVIOEuroc.bash -p /Euroc/MH_01_easy -log
+```
 
-Use Jupyter notebooks in [evaluation repository](https://github.com/MIT-SPARK/Kimera-VIO-Evaluation) to visualize results and compare errors.
+Use Jupyter notebooks from the [evaluation repository](https://github.com/MIT-SPARK/Kimera-VIO-Evaluation) to visualize results and compare error metrics.
 
 ## Results
 
-At optimal parameters, the implementation with GNSS behaves more accurately than without GNSSi. If you add noise to GNSS data or reduce their amount, then the accuracy of the constructed trajectory decreases, but is still comparable to the trajectory without GNSS.
+At optimal parameters, the implementation with GNSS produces more accurate trajectories than VIO without GNSS. When GNSS data is noisy or sparse, the performance gracefully degrades and remains on par with standard VIO.
 
 ## Links
 

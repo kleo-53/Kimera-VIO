@@ -1,63 +1,3 @@
-# #!/bin/bash
-# ###################################################################
-# # Default values — можно переопределить аргументами
-
-# DATASET_PATH="/path/to/euroc/dataset"
-# DATASET_TYPE=0
-# USE_LCD=0
-# LOG_OUTPUT=0
-
-# # Build path: specify where the executable for Kimera is.
-# BUILD_PATH="../build"
-
-# # Params path: specify where the parameters for Kimera are.
-# PARAMS_PATH="../params/Euroc"
-# # PARAMS_PATH="../params/EurocMono"  # use this for monocular-mode (left cam only)
-
-# # Vocabulary path: specify where the vocabulary for loop closure is.
-# VOCABULARY_PATH="../vocabulary"
-
-# # Output path: specify where the output logs will be written.
-# # (only used if LOG_OUTPUT is enabled)
-# OUTPUT_PATH="../output_logs"
-# ###################################################################
-
-# # Parse options
-# while [ -n "$1" ]; do
-#     case "$1" in
-#     -p)
-#         DATASET_PATH=$2
-#         shift ;;
-#     -d)
-#         DATASET_TYPE=$2
-#         shift ;;
-#     -lcd)
-#         USE_LCD=1 ;;
-#     -log)
-#         LOG_OUTPUT=1 ;;
-#     --)
-#         shift
-#         break ;;
-#     *) echo "Option $1 not recognized" ;;
-#     esac
-#     shift
-# done
-
-# # Make sure dataset path is absolute
-# DATASET_PATH=$(realpath "$DATASET_PATH")
-
-# echo """ Launching:
-
-#              █████╗   █████╗   █████╗ 
-#             ██╔══██╗ ██╔══██╗ ██╔══██╗
-#             ███████║ ███████║ ███████║
-#             ██╔══██║ ██╔══██║ ██╔══██║
-#             ██║  ██║ ██║  ██║ ██║  ██║
-#             ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝
-
-#  """
-
-
 #!/bin/bash
 ###################################################################
 # Fill the variables below
@@ -133,15 +73,14 @@ cd "$parent_path"
 
 echo """ Launching:
 
-             █████╗   █████╗   █████╗ 
-            ██╔══██╗ ██╔══██╗ ██╔══██╗
-            ███████║ ███████║ ███████║
-            ██╔══██║ ██╔══██║ ██╔══██║
-            ██║  ██║ ██║  ██║ ██║  ██║
-            ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝
+            ██╗  ██╗██╗███╗   ███╗███████╗██████╗  █████╗
+            ██║ ██╔╝██║████╗ ████║██╔════╝██╔══██╗██╔══██╗
+            █████╔╝ ██║██╔████╔██║█████╗  ██████╔╝███████║
+            ██╔═██╗ ██║██║╚██╔╝██║██╔══╝  ██╔══██╗██╔══██║
+            ██║  ██╗██║██║ ╚═╝ ██║███████╗██║  ██║██║  ██║ with gnss
+            ╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
 
  """
-
 
 # Execute stereoVIOEuroc with given flags.
 # The flag --help will provide you with information about what each flag
@@ -174,36 +113,3 @@ $BUILD_PATH/GnssStereoVIO \
 #export PARAMS_PATH=../params/Euroc
 #export DATASET_PATH=/home/tonirv/datasets/EuRoC/V1_01_easy
 #gdb --args ../build/stereoVIOEuroc --flagfile="$PARAMS_PATH/flags/stereoVIOEuroc.flags" --flagfile="$PARAMS_PATH/flags/Mesher.flags" --flagfile="$PARAMS_PATH/flags/VioBackend.flags" --flagfile="$PARAMS_PATH/flags/RegularVioBackend.flags" --flagfile="$PARAMS_PATH/flags/Visualizer3D.flags" --logtostderr=1 --colorlogtostderr=1 --log_prefix=0 --dataset_path="$DATASET_PATH" --params_folder_path="$PARAMS_PATH" --initial_k=50 --final_k=2000 --vocabulary_path="../vocabulary/ORBvoc.yml" --use_lcd="0" --v=0 --vmodule=VioBackend=0 --dataset_type="0" --log_output="0" --output_path="../output_logs/"
-
-
-
-# # Run Docker with mounted dataset and execute GnssStereoVIO
-# docker run -it --rm \
-#     -v "$DATASET_PATH":"$DATASET_PATH" \
-#     -v "$(pwd)/Kimera-VIO/params":"$PARAMS_PATH" \
-#     -v "$(pwd)/Kimera-VIO/vocabulary":"$VOCABULARY_PATH" \
-#     -v "$(pwd)/Kimera-VIO/output_logs":"$OUTPUT_PATH" \
-#     kimera_vio \
-#     GnssStereoVIO \
-#         --dataset_type="$DATASET_TYPE" \
-#         --dataset_path="$DATASET_PATH" \
-#         --initial_k=50 \
-#         --final_k=10000 \
-#         --params_folder_path="$PARAMS_PATH" \
-#         --use_lcd="$USE_LCD" \
-#         --vocabulary_path="$VOCABULARY_PATH/ORBvoc.yml" \
-#         --flagfile="$PARAMS_PATH/flags/stereoVIOEuroc.flags" \
-#         --flagfile="$PARAMS_PATH/flags/Mesher.flags" \
-#         --flagfile="$PARAMS_PATH/flags/VioBackend.flags" \
-#         --flagfile="$PARAMS_PATH/flags/RegularVioBackend.flags" \
-#         --flagfile="$PARAMS_PATH/flags/Visualizer3D.flags" \
-#         --logtostderr=1 \
-#         --colorlogtostderr=1 \
-#         --log_prefix=1 \
-#         --v=0 \
-#         --vmodule=Pipeline*=00 \
-#         --log_output="$LOG_OUTPUT" \
-#         --log_euroc_gt_data="$LOG_OUTPUT" \
-#         --save_frontend_images=1 \
-#         --visualize_frontend_images=1 \
-#         --output_path="$OUTPUT_PATH"

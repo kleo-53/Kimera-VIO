@@ -33,8 +33,6 @@ gtsam::Vector GnssFactor::evaluateError(
     *H = (Matrix(3, 6) << Matrix3::Zero(), Matrix3::Identity()).finished();
   }
   auto err = pose.translation() - position_;
-  LOG(WARNING) << "Frame: " << this->key() << " Error GNSS: " << err.transpose()
-               << std::endl;
   return pose.translation() - position_;
 }
 

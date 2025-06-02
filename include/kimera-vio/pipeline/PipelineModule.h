@@ -190,14 +190,12 @@ class PipelineModule : public PipelineModuleBase {
   bool spin() override {
     VLOG_IF(1, parallel_run_) << "Module: " << name_id_ << " - Spinning.";
     utils::StatsCollector timing_stats(name_id_ + " [ms]");
-    LOG(INFO) << "Module: " << name_id_ << " - Spinning.";  //TOD: убрать
     while (!shutdown_) {
       // Get input data from queue by waiting for payload.
       is_thread_working_ = false;
       InputUniquePtr input = getInputPacket();
       is_thread_working_ = true;
       if (input) {
-        // LOG(INFO) << "WE ARE IN SPIN 3"; TOD: убрать
         auto tic = utils::Timer::tic();
         // Transfer the ownership of input to the actual pipeline module.
         // From this point on, you cannot use input, since spinOnce owns it.
@@ -214,7 +212,6 @@ class PipelineModule : public PipelineModuleBase {
           // Notify interested parties about failure.
           notifyOnFailure();
         }
-        // auto spin_duration = utils::Timer::toc(tic).count();
         auto spin_duration = utils::Timer::toc(tic).count();
         timing_stats.AddSample(spin_duration);
       } else {

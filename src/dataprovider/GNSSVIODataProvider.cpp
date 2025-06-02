@@ -143,7 +143,6 @@ bool GNSSVIODataProvider::hasData() const { return current_k_ < final_k_; }
 bool GNSSVIODataProvider::spinOnce() {
   CHECK_LT(current_k_, std::numeric_limits<FrameId>::max())
       << "Are you sure you've initialized current_k_?";
-  LOG(INFO) << "spinOnce processed frame " << current_k_ - 1;
   if (current_k_ >= final_k_) {
     LOG(INFO) << "Finished spinning Euroc dataset.";
     return false;
@@ -196,7 +195,6 @@ void GNSSVIODataProvider::sendImuData() const {
     previous_timestamp = imu_meas.timestamp_;
     imu_single_callback_(imu_meas);
   }
-  LOG(INFO) << "IMU DATA SENT";
 }
 
 void GNSSVIODataProvider::sendGnssData() const {
@@ -208,7 +206,6 @@ void GNSSVIODataProvider::sendGnssData() const {
     previous_timestamp = gnss_meas.timestamp_;
     gnss_callback_(gnss_meas);
   }
-  LOG(INFO) << "GNSS DATA SENT";
 }
 
 /* -------------------------------------------------------------------------- */

@@ -63,14 +63,15 @@ RUN git clone https://github.com/marcusabate/opengv && \
       make -j$(nproc) install
 
 # Install DBoW2
-COPY .patches/fix_vocab.patch dbow2.patch
-RUN git clone https://github.com/dorian3d/DBoW2.git
-RUN cd DBoW2 && \
-      git apply ../dbow2.patch && \
-      mkdir build && \
-      cd build && \
-      cmake .. && \
-      make -j$(nproc) install
+# COPY .patches/fix_vocab.patch dbow2.patch
+RUN git clone https://github.com/dorian3d/DBoW2.git && \
+    cd DBoW2 && \
+    git checkout v1.1-free-enhancement-rmsalinas && \
+    git reset --hard HEAD && \
+    git apply ../dbow2.patch || echo "Patch not applicable, skipping" && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make -j$(nproc) install
 
 # Install RobustPGO
 ADD https://api.github.com/repos/MIT-SPARK/Kimera-RPGO/git/refs/heads/master version.json
@@ -80,7 +81,3 @@ RUN cd Kimera-RPGO && \
       cd build && \
       cmake .. && \
       make -j$(nproc) install
-
-# Install Kimera-VIO
-RUN git clone https://github.com/MIT-SPARK/Kimera-VIO.git
-RUN cd Kimera-VIO && mkdir build && cd build && cmake .. && make -j$(nproc)

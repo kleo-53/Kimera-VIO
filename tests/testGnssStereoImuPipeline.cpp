@@ -201,18 +201,6 @@ TEST_F(GnssVioPipelineFixture, OnlineSequentialSpinOnce) {
   vio_pipeline_->shutdown();
 }
 
-// TEST_F(GnssVioPipelineFixture, OnlineSequentialSpin) {
-//   // TODO(Toni): remove visualizer gflags!
-//   vio_params_.parallel_run_ = false;
-//   buildOnlinePipeline(vio_params_);
-//   ASSERT_TRUE(dataset_parser_);
-//   ASSERT_TRUE(vio_pipeline_);
-//   while (dataset_parser_->spin() && vio_pipeline_->spin()) {
-//     /* well, nothing to do :) */
-//   };
-//   vio_pipeline_->shutdown();
-// }
-
 TEST_F(GnssVioPipelineFixture, OnlineParallelStartManualShutdown) {
   ASSERT_TRUE(vio_params_.parallel_run_);
   ASSERT_TRUE(dataset_parser_);
@@ -281,18 +269,6 @@ TEST_F(GnssVioPipelineFixture, OfflineSequentialSpinOnce) {
   vio_pipeline_->shutdown();
 }
 
-// TEST_F(GnssVioPipelineFixture, OfflineSequentialSpin) {
-//   // TODO(Toni): remove visualizer gflags!
-//   vio_params_.parallel_run_ = false;
-//   buildOfflinePipeline(vio_params_);
-//   ASSERT_TRUE(dataset_parser_);
-//   ASSERT_TRUE(vio_pipeline_);
-//   while (dataset_parser_->spin() && vio_pipeline_->spin()) {
-//     /* well, nothing to do :) */
-//   };
-//   vio_pipeline_->shutdown();
-// }
-
 TEST_F(GnssVioPipelineFixture, OfflineParallelStartManualShutdown) {
   buildOfflinePipeline(vio_params_);
   ASSERT_TRUE(vio_params_.parallel_run_);
@@ -344,22 +320,6 @@ TEST_F(GnssVioPipelineFixture, OfflineParallelSpinShutdownWhenFinished) {
   EXPECT_FALSE(handle_pipeline.get());
   EXPECT_FALSE(handle.get());
 }
-
-// // This tests that the VIO pipeline dies gracefully if the Backend breaks.
-// TEST_F(GnssVioPipelineFixture,
-// OfflineSequentialSpinBackendFailureGracefulShutdown) {
-//   // Modify vio pipeline so that the Backend fails
-//   vio_params_.parallel_run_ = false;
-//   vio_params_.backend_params_->nr_states_ = 1;
-//   vio_params_.backend_type_ = BackendType::kStereoImu;
-//   buildOfflinePipeline(vio_params_);
-//   ASSERT_TRUE(dataset_parser_);
-//   ASSERT_TRUE(vio_pipeline_);
-//   while (dataset_parser_->spin() && vio_pipeline_->spin()) {
-//     /* well, nothing to do :) */
-//   };
-//   vio_pipeline_->shutdown();
-// }
 
 // This tests that the VIO pipeline dies gracefully if the Backend breaks.
 TEST_F(GnssVioPipelineFixture,
