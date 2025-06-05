@@ -65,6 +65,7 @@ Use Jupyter notebooks from the [evaluation repository](https://github.com/MIT-SP
 ## Results
 
 At optimal parameters, the implementation with GNSS produces more accurate trajectories than VIO without GNSS. When GNSS data is noisy or sparse, the performance gracefully degrades and remains on par with standard VIO.
+The parameters that produced the best results can be found in the `Params\EurocGnss` folder.
 
 ## Links
 
